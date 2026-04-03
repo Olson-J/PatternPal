@@ -1,1 +1,80 @@
 # PatternPal
+
+PatternPal is a web application that helps sewing enthusiasts, especially historical garment makers, generate structured garment construction guidance.
+
+Users describe a garment they want to make (for example, "18th-century stays"), choose a guidance mode, and receive organized results including materials, assembly steps, and finishing guidance.
+
+## Core Goal
+
+PatternPal does not generate exact drafting measurements. Instead, it generates adaptable, structured construction guidance that helps users approach and complete a garment project.
+
+## Output Modes
+
+- Casual mode: beginner-friendly instructions, modern shortcuts, accessible methods.
+- Professional mode: historically informed and higher-quality tailoring practices.
+
+## Planned Tech Stack
+
+- Frontend: Next.js (React) + Tailwind CSS
+- Backend/API: Next.js API routes
+- Database: PostgreSQL via Supabase
+- Background jobs: Trigger.dev
+- LLM: OpenAI API
+- File/PDF storage: Supabase Storage
+- PDF generation: Puppeteer
+
+## System Components
+
+### Frontend
+
+- Main garment input form
+- Casual/Professional mode toggle
+- Structured instruction viewer (materials, assembly, finishing)
+- Saved-project dashboard
+- Job loading/progress states
+
+### Backend API
+
+- Endpoint to submit garment + mode
+- Endpoints to save and retrieve projects
+- Optional authentication (time permitting)
+
+### LLM Integration
+
+- Prompt templates for structured output
+- Mode-specific behavior (casual vs professional)
+- Output parser/normalizer for consistent sections
+- Caching strategy to reduce repeated generation costs
+
+### Database
+
+- Users
+- Projects
+- Generated instructions
+- Proper relationships between users and projects
+
+### Background Worker
+
+- Async instruction generation jobs
+- Async PDF generation jobs
+- Job status tracking for frontend polling
+
+### PDF Export
+
+- Printable instruction views via Puppeteer
+- Download and save flows
+
+## Development Tracking
+
+The development milestones, progress board, risks, and MVP definition now live in:
+
+- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md)
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.
