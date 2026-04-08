@@ -10,6 +10,7 @@ This document is the project tracking source of truth for milestones, implementa
 - Keep output structured and reliable across both guidance modes.
 - Use asynchronous processing for long-running generation/export work.
 - Limit scope creep by shipping MVP before optional enhancements.
+- Update this plan immediately after each milestone section is worked on so the current status stays accurate.
 
 ## Milestones
 
@@ -18,28 +19,26 @@ This document is the project tracking source of truth for milestones, implementa
 **Goal:** Set up the project and testing infrastructure without touching the real API.
 
 - [ ] Confirm repository setup and branch workflow
-- [ ] Configure environment variables template (`.env.example`)
-- [ ] Add initial app shell and global layout
-- [ ] Document local setup and run instructions
-- [ ] Create mock response fixtures (garment instructions schema)
-- [ ] Set up test utilities and mock response factories
-- [ ] Define API response schema (TypeScript interfaces)
+- [x] Configure environment variables template (`.env.example`)
+- [x] Add initial app shell and global layout
+- [x] Document local setup and run instructions
+- [x] Create mock response fixtures (garment instructions schema)
+- [x] Set up test utilities and mock response factories
+- [x] Define API response schema (TypeScript interfaces)
 
-**Cost:** $0 (no API calls)
 
 ### Milestone 1: Frontend + Mock Integration
 
 **Goal:** Build the complete UI using hardcoded mock responses; finalize schema and UX without API costs.
 
-- [ ] Build garment description form
-- [ ] Add mode selector (Casual/Professional)
-- [ ] Create structured results UI sections (materials, assembly, finishing, etc.)
-- [ ] Add loading and error states
-- [ ] Wire form submission to generate mock results
-- [ ] Test all UX paths with mock data
-- [ ] Verify results schema meets UX needs
+- [x] Build garment description form
+- [x] Add mode selector (Casual/Professional)
+- [x] Create structured results UI sections (materials, assembly, finishing, etc.)
+- [x] Add loading and error states
+- [x] Wire form submission to generate mock results
+- [x] Test all UX paths with mock data
+- [x] Verify results schema meets UX needs
 
-**Cost:** $0 (no API calls)
 
 ### Milestone 2: API Generation Endpoint + Mocked Testing
 
@@ -53,7 +52,6 @@ This document is the project tracking source of truth for milestones, implementa
 - [ ] Add basic response caching layer
 - [ ] Test error cases with mock data
 
-**Cost:** $0 (no API calls; all tests use mocks)
 
 ### Milestone 3: Persistence and Dashboard with Fixtures
 
@@ -66,7 +64,6 @@ This document is the project tracking source of truth for milestones, implementa
 - [ ] Add project details view
 - [ ] Populate test database with fixture projects for UI testing
 
-**Cost:** $0 (no API calls; fixtures only)
 
 ### Milestone 4: Background Jobs + Status Tracking (Mocked)
 
@@ -79,7 +76,6 @@ This document is the project tracking source of truth for milestones, implementa
 - [ ] Handle retry/failure states cleanly
 - [ ] Test full job flow with mocked LLM responses
 
-**Cost:** $0 (mocked generation; minimal Trigger.dev testing)
 
 ### Milestone 5: PDF Export (Mocked)
 
@@ -114,8 +110,8 @@ Update this table as implementation advances. **Cost column tracks real API toke
 
 | Milestone | Status | API Used | Estimated Cost | Notes |
 | --- | --- | --- | --- | --- |
-| M0: Project Foundation + Mocks | Not started | None | $0 | Set up infrastructure, no API calls |
-| M1: Frontend + Mock Integration | Not started | None | $0 | UI complete with mock data |
+| M0: Project Foundation + Mocks | In progress | None | $0 | Core mock infrastructure and docs are in place; branch workflow confirmation still pending |
+| M1: Frontend + Mock Integration | Completed | None | $0 | Mock UI flow and schema rendering validated via automated tests |
 | M2: API Logic (Mocked Testing) | Not started | None | $0 | Generate endpoint and parser, tested with mocks |
 | M3: Persistence + Fixtures | Not started | None | $0 | Database with fixture data |
 | M4: Background Jobs (Mocked) | Not started | None | $0 | Job infrastructure, mocked generation |

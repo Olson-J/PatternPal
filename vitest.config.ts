@@ -4,8 +4,8 @@ import path from "path";
 export default defineConfig({
   test: {
     globals: true,
-    environment: "node",
-    setupFiles: [],
+    environment: "happy-dom",
+    setupFiles: ["./__tests__/setup.ts"],
   },
   resolve: {
     alias: {

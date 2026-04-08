@@ -24,7 +24,8 @@ export const mockCasualStays: GarmentInstructions = {
   garment: "18th-century stays",
   mode: "casual",
   materials: [
-    "Cotton or linen fabric (2-3 yards)",
+    "Sturdy cotton or linen fabric (2-3 yards)",
+    "Linen or cotton twill for interlining",
     "Boning material (synthetic or reed)",
     "Matching thread",
     "Metal eyelets or grommets",
@@ -59,7 +60,7 @@ export const mockCasualStays: GarmentInstructions = {
       step: 4,
       description: "Add closure",
       details: [
-        "Install eyelets or grommets for front closure, space 3/4 to1 inch apart"
+        "Install eyelets or grommets for front closure, space 3/4 to 1 inch apart"
         ],
     },
   ],
@@ -71,7 +72,7 @@ export const mockCasualStays: GarmentInstructions = {
   ],
   notes:
     "Casual mode simplifies some techniques for beginners. Modern synthetic boning is easier to work with than period-correct materials.",
-  generatedAt: new Date().toISOString(),
+  generatedAt: "2026-04-03T00:00:00.000Z",
 };
 
 export const mockProfessionalStays: GarmentInstructions = {
@@ -79,6 +80,7 @@ export const mockProfessionalStays: GarmentInstructions = {
   mode: "professional",
   materials: [
     "Linen twill or wool (period-appropriate, 18-22 oz)",
+    "Linen or cotton foundation fabric (for interlining)",
     "Reed or baleen boning, or cotton cording for softer support",
     "Linen thread (hand-stitching quality)",
     "Linen twill for channels",
@@ -104,6 +106,7 @@ export const mockProfessionalStays: GarmentInstructions = {
         "Cut fashion fabric, linen foundation, and lining as separate layers",
         "Grain line runs vertically for stability",
         "Allow 1/2 inch seam allowances throughout",
+        "Add in generous extra allowance for sections where cording will be used, to account for distortion",
       ],
     },
     {
@@ -113,7 +116,7 @@ export const mockProfessionalStays: GarmentInstructions = {
         "Use backstitch or running backstitch",
         "Channel spacing varies: 1-1.5 inches spacing typical",
         "Channel widths accommodate bone size (typically 3/8 to 1/2 inch)",
-        "Boning runs full length for structure, cording sections typically run diagonally or horizontally for shaping",
+        "Boning runs full length for structure, cording sections typically run diagonally or horizontally for shaping and softer support",
       ],
     },
     {
@@ -122,29 +125,27 @@ export const mockProfessionalStays: GarmentInstructions = {
       details: [
         "Hand-stitch side seams using backstitch",
         "Try on stays before finishing edges to ensure fit",
-        "Bind front edges with linen or wool twill",
-        "Bind neckline and armholes with silk or wool binding",
+        "Bind edges with linen or wool twill",
       ],
     },
     {
       step: 5,
       description: "Finish closure",
       details: [
-        "Hand-stitch eyelets with buttonhole twist, spaced 1/2 to 3/4 inch",
-        "Lace with natural fiber cord",
+        "Hand-stitch eyelets with buttonhole twist, spaced 1/2 to 3/4 inch apart",
+        "Spiral lace with natural fiber cord",
         "Ensure even closure without gaping",
       ],
     },
   ],
   finishing: [
-    "Final press with care to avoid flattening structure",
     "Hand-stitch any remaining binding by fell seam if visible inside",
     "Check all stitching for consistency and strength",
     "Test closure mechanism for durability",
   ],
   notes:
-    "Professional mode emphasizes historical accuracy and hand-sewing techniques. Reed boning and natural fabrics are period-appropriate and will age better than synthetics.",
-  generatedAt: new Date().toISOString(),
+    "Professional mode emphasizes historical accuracy and hand-sewing techniques. Reed boning and natural fabrics are period-appropriate and will age better than synthetics. Shaping garments will generally adapt to the wearer over time, as body heat and movement soften and reform the boning.",
+  generatedAt: "2026-04-03T00:00:00.000Z",
 };
 
 export const mockSimpleDress: GarmentInstructions = {
@@ -160,20 +161,20 @@ export const mockSimpleDress: GarmentInstructions = {
       step: 1,
       description: "Cut pattern pieces",
       details: [
-        "Front and back bodice panels",
+        "Front and back panels",
         "Sleeves (optional or minimal)",
-        "Skirt panels",
+        "Skirt godets",
       ],
     },
     {
       step: 2,
-      description: "Sew bodice seams",
+      description: "Sew shoulder and upper side seams",
       details: ["Side seams and shoulder seams with 1/2 inch allowance"],
     },
     {
       step: 3,
-      description: "Attach skirt to bodice",
-      details: ["Gather skirt to fit bodice waist", "Use simple gathers or pleats"],
+      description: "Attach godets to skirt panels",
+      details: ["Godets are added at or below the hip to add fullness"],
     },
     {
       step: 4,
@@ -182,10 +183,11 @@ export const mockSimpleDress: GarmentInstructions = {
     },
   ],
   finishing: [
-    "Hem skirt to desired length",
     "Try on and adjust fit if needed",
+    "Hem skirt to desired length",
+    "Add optional trim or lace to neckline and sleeves",
   ],
-  generatedAt: new Date().toISOString(),
+  generatedAt: "2026-04-03T00:00:00.000Z",
 };
 
 /**
@@ -206,7 +208,7 @@ export function createMockInstructions(
       },
     ],
     finishing: ["Test finishing step 1"],
-    generatedAt: new Date().toISOString(),
+    generatedAt: "2026-04-03T00:00:00.000Z",
     ...overrides,
   };
 }

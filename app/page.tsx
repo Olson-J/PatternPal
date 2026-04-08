@@ -1,31 +1,358 @@
-export default function Home() {
+"use client";
+
+import { FormEvent, useState, type ReactNode } from "react";
+import {
+  createMockInstructions,
+  mockCasualStays,
+  mockProfessionalStays,
+  mockSimpleDress,
+  type AssemblyStep,
+  type GarmentInstructions,
+} from "../__tests__/fixtures/garmentInstructions";
+
+type GuidanceMode = GarmentInstructions["mode"];
+
+type ExamplePrompt = {
+  label: string;
+  value: string;
+  mode: GuidanceMode;
+};
+
+const examplePrompts: ExamplePrompt[] = [
+  { label: "18th-century stays", value: "18th-century stays", mode: "casual" },
+  { label: "Professional 18th-century stays", value: "18th-century stays", mode: "professional" },
+  { label: "Simple shift dress", value: "simple linen shift dress", mode: "casual" },
+];
+
+function capitalizeLabel(value: string): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return "Untitled garment";
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+function pickMockFixture(description: string, mode: GuidanceMode): GarmentInstructions {
+  const normalized = description.toLowerCase();
+
+  if (normalized.includes("dress")) {
+    return mockSimpleDress;
+  }
+
+  if (normalized.includes("stays") || normalized.includes("corset")) {
+    return mode === "professional" ? mockProfessionalStays : mockCasualStays;
+  }
+
+  return mode === "professional" ? mockProfessionalStays : mockCasualStays;
+}
+
+function buildMockInstructions(description: string, mode: GuidanceMode): GarmentInstructions {
+  const baseFixture = pickMockFixture(description, mode);
+  const garmentName = capitalizeLabel(description);
+
+  return createMockInstructions({
+    garment: garmentName,
+    mode,
+    materials: baseFixture.materials,
+    assembly: baseFixture.assembly,
+    finishing: baseFixture.finishing,
+    notes: baseFixture.notes,
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-center py-32 px-16 gap-8">
-        <h1 className="text-4xl font-bold text-black dark:text-white text-center">
-          PatternPal
-        </h1>
-        <p className="text-lg text-zinc-600 dark:text-zinc-400 text-center max-w-lg">
-          Generate structured garment construction guidance for your sewing projects.
-        </p>
-        <div className="text-center text-sm text-zinc-500 dark:text-zinc-500">
-          Home page under development. Form and results UI coming soon.
-        </div>
-      </main>
-    </div>
+    <section className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur dark:border-white/10 dark:bg-zinc-950/80">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">{title}</h2>
+        {description ? (
+          <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </section>
   );
 }
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+function Badge({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">
+      {children}
+    </span>
+  );
+}
+
+function FeatureList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+      {items.map((item) => (
+        <li key={item} className="flex gap-3">
+          <span className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AssemblyList({ steps }: { steps: AssemblyStep[] }) {
+  return (
+    <ol className="space-y-4">
+      {steps.map((step) => (
+        <li
+          key={step.step}
+          className="rounded-2xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/70"
+        >
+          <div className="flex items-baseline justify-between gap-4">
+            <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+              Step {step.step}: {step.description}
+            </h3>
+          </div>
+          {step.details ? (
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {step.details.map((detail) => (
+                <li key={detail} className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-zinc-400 dark:bg-zinc-500" />
+                  <span>{detail}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+export default function Home() {
+  const [description, setDescription] = useState("18th-century stays");
+  const [mode, setMode] = useState<GuidanceMode>("casual");
+  const [instructions, setInstructions] = useState<GarmentInstructions>(mockCasualStays);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const trimmedDescription = description.trim();
+
+    if (!trimmedDescription) {
+      setError("Enter a garment description before generating guidance.");
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+
+    window.setTimeout(() => {
+      setInstructions(buildMockInstructions(trimmedDescription, mode));
+      setIsLoading(false);
+    }, 500);
+  }
+
+  function applyExample(example: ExamplePrompt) {
+    setDescription(example.value);
+    setMode(example.mode);
+    setError(null);
+    setInstructions(buildMockInstructions(example.value, example.mode));
+  }
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_28%),linear-gradient(180deg,_#fffdf7_0%,_#f8fafc_48%,_#eef2ff_100%)] text-zinc-950 dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(24,24,27,0.32),_transparent_28%),linear-gradient(180deg,_#09090b_0%,_#111827_100%)] dark:text-zinc-50">
+      <div className="absolute inset-x-0 top-0 h-72 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0))] dark:bg-[linear-gradient(180deg,rgba(9,9,11,0.92),rgba(9,9,11,0))]" />
+
+      <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 sm:px-10 lg:px-12">
+        <section className="grid gap-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur md:grid-cols-[1.1fr_0.9fr] md:p-8 dark:border-white/10 dark:bg-zinc-950/60">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge>Mock-first milestone</Badge>
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">No API tokens required yet</span>
+            </div>
+
+            <div className="space-y-4">
+              <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                PatternPal turns garment ideas into structured sewing guidance.
+              </h1>
+              <p className="max-w-2xl text-base leading-7 text-zinc-600 sm:text-lg dark:text-zinc-300">
+                Build, test, and refine the full experience against mock fixtures first. That keeps the UI stable,
+                the workflow reviewable, and the real API cost deferred until launch validation.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200">Cost</p>
+                <p className="mt-2 text-2xl font-semibold">$0</p>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Until the final API milestone</p>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Mode</p>
+                <p className="mt-2 text-2xl font-semibold">Casual / Professional</p>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Switch tone and construction detail</p>
+              </div>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Flow</p>
+                <p className="mt-2 text-2xl font-semibold">Generate</p>
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">View, save, export later</p>
+              </div>
+            </div>
+          </div>
+
+          <SectionCard
+            title="Try a guided example"
+            description="These presets let you exercise the UI and state transitions without waiting on any external service."
           >
-            Documentation
-          </a>
-        </div>
+            <div className="grid gap-3">
+              {examplePrompts.map((example) => (
+                <button
+                  key={example.label}
+                  type="button"
+                  onClick={() => applyExample(example)}
+                  className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm font-medium text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100 dark:hover:border-amber-500/40 dark:hover:bg-zinc-900"
+                >
+                  <span className="block text-xs uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Example</span>
+                  <span className="mt-1 block">{example.label}</span>
+                </button>
+              ))}
+            </div>
+          </SectionCard>
+        </section>
+
+        <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+          <SectionCard
+            title="Garment prompt"
+            description="This is the milestone-one frontend. The form, loading state, and validation are all local and mock-driven."
+          >
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Garment description</span>
+                <textarea
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={5}
+                  className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-amber-500"
+                  placeholder="Describe the garment you want to make..."
+                />
+              </label>
+
+              <fieldset className="space-y-3">
+                <legend className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Guidance mode</legend>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {([
+                    { label: "Casual", value: "casual" },
+                    { label: "Professional", value: "professional" },
+                  ] as const).map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 transition ${
+                        mode === option.value
+                          ? "border-amber-400 bg-amber-50 dark:border-amber-500/50 dark:bg-amber-500/10"
+                          : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{option.label}</span>
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={option.value}
+                        checked={mode === option.value}
+                        onChange={() => setMode(option.value)}
+                        className="h-4 w-4 accent-amber-500"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              {error ? (
+                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+                  {error}
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+              >
+                {isLoading ? "Generating mock guidance..." : "Generate mock guidance"}
+              </button>
+            </form>
+          </SectionCard>
+
+          <div className="space-y-8">
+            <SectionCard
+              title="Structured results"
+              description="These sections mirror the API response shape we will later normalize from the live model."
+            >
+              {isLoading ? (
+                <div className="space-y-4">
+                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                  <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
+                  <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Badge>{instructions.mode} mode</Badge>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Generated from fixture data</span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{instructions.garment}</h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                      {instructions.notes ?? "No additional notes provided."}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-6 xl:grid-cols-3">
+                    <div className="xl:col-span-1">
+                      <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                        Materials
+                      </h4>
+                      <div className="mt-4">
+                        <FeatureList items={instructions.materials} />
+                      </div>
+                    </div>
+
+                    <div className="xl:col-span-2">
+                      <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                        Assembly
+                      </h4>
+                      <div className="mt-4">
+                        <AssemblyList steps={instructions.assembly} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                      Finishing
+                    </h4>
+                    <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                      <FeatureList items={instructions.finishing} />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
+                    This result is mock-generated. Once Milestone 2 is ready, the same schema will receive parsed API output.
+                  </div>
+                </div>
+              )}
+            </SectionCard>
+          </div>
+        </section>
       </main>
     </div>
   );
