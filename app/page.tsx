@@ -188,6 +188,12 @@ export default function Home() {
                 Build, test, and refine the full experience against mock fixtures first. That keeps the UI stable,
                 the workflow reviewable, and the real API cost deferred until launch validation.
               </p>
+              <a
+                href="/projects"
+                className="inline-flex rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+              >
+                Open project history dashboard
+              </a>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">

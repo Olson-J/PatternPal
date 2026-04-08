@@ -57,12 +57,12 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Build database and persistence layer using fixture data; no real API yet.
 
-- [ ] Define Supabase schema (users/projects/instructions)
-- [ ] Add save generated project endpoint
-- [ ] Add list/fetch saved projects endpoints
-- [ ] Build dashboard for project history
-- [ ] Add project details view
-- [ ] Populate test database with fixture projects for UI testing
+- [x] Define Supabase schema (users/projects/instructions)
+- [x] Add save generated project endpoint
+- [x] Add list/fetch saved projects endpoints
+- [x] Build dashboard for project history
+- [x] Add project details view
+- [x] Populate test database with fixture projects for UI testing
 
 
 ### Milestone 4: Background Jobs + Status Tracking (Mocked)
@@ -113,7 +113,7 @@ Update this table as implementation advances. **Cost column tracks real API toke
 | M0: Project Foundation + Mocks | In progress | None | $0 | Core mock infrastructure and docs are in place; branch workflow confirmation still pending |
 | M1: Frontend + Mock Integration | Completed | None | $0 | Mock UI flow and schema rendering validated via automated tests |
 | M2: API Logic (Mocked Testing) | Completed | None | $0 | Generate endpoint, parser, fallback validation, caching, and error-path tests are implemented with mocks |
-| M3: Persistence + Fixtures | Not started | None | $0 | Database with fixture data |
+| M3: Persistence + Fixtures | Completed | None | $0 | Fixture-backed save/list/fetch APIs, dashboard + detail views, and Supabase target schema are in place |
 | M4: Background Jobs (Mocked) | Not started | None | $0 | Job infrastructure, mocked generation |
 | M5: PDF Export (Mocked) | Not started | None | $0 | PDF pipeline, tested with fixtures |
 | M6: Pre-Launch Integration | Not started | Real API | TBD | Final E2E tests with real API; measure and optimize costs |
