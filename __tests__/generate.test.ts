@@ -1,0 +1,62 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { clearGenerationCache } from "../lib/instructions/cache";
+import { generateInstructions } from "../lib/instructions/generate";
+
+describe("Instruction generation service", () => {
+  beforeEach(() => {
+    clearGenerationCache();
+  });
+
+  it("returns parsed instructions from generator output", async () => {
+    const generator = vi.fn(async () =>
+      JSON.stringify({
+        garment: "Simple dress",
+        mode: "casual",
+        materials: ["Linen"],
+        assembly: [{ step: 1, description: "Cut pieces" }],
+        finishing: ["Hem skirt"],
+      })
+    );
+
+    const result = await generateInstructions(
+      { description: "simple linen shift dress", mode: "casual" },
+      generator
+    );
+
+    expect(result.fromCache).toBe(false);
+    expect(result.instructions.garment).toBe("Simple dress");
+    expect(result.instructions.materials).toContain("Linen");
+    expect(generator).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses cache for repeated requests", async () => {
+    const generator = vi.fn(async () =>
+      JSON.stringify({
+        garment: "Cached garment",
+        mode: "casual",
+        materials: ["Fabric"],
+        assembly: [{ step: 1, description: "Assemble" }],
+        finishing: ["Finish"],
+      })
+    );
+
+    const input = { description: "cached garment", mode: "casual" as const };
+
+    const first = await generateInstructions(input, generator);
+    const second = await generateInstructions(input, generator);
+
+    expect(first.fromCache).toBe(false);
+    expect(second.fromCache).toBe(true);
+    expect(generator).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates upstream generator errors", async () => {
+    const generator = vi.fn(async () => {
+      throw new Error("mock LLM failure");
+    });
+
+    await expect(
+      generateInstructions({ description: "stays", mode: "professional" }, generator)
+    ).rejects.toThrow("mock LLM failure");
+  });
+});

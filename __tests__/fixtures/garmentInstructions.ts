@@ -4,21 +4,11 @@
  * and allow frontend/backend development without real API calls.
  */
 
-export interface GarmentInstructions {
-  garment: string;
-  mode: "casual" | "professional";
-  materials: string[];
-  assembly: AssemblyStep[];
-  finishing: string[];
-  notes?: string;
-  generatedAt: string;
-}
-
-export interface AssemblyStep {
-  step: number;
-  description: string;
-  details?: string[];
-}
+import type { GarmentInstructions } from "../../lib/instructions/schema";
+export type {
+  AssemblyStep,
+  GarmentInstructions,
+} from "../../lib/instructions/schema";
 
 export const mockCasualStays: GarmentInstructions = {
   garment: "18th-century stays",

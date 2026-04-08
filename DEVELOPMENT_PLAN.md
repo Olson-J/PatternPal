@@ -44,13 +44,13 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Build the API layer and business logic, tested entirely with mock responses (no live API yet).
 
-- [ ] Create API endpoint for generation requests
-- [ ] Implement structured prompt templates
-- [ ] Implement LLM response parser into normalized schema
-- [ ] Add validation and fallback handling for incomplete outputs
-- [ ] Write unit tests using mock LLM responses
-- [ ] Add basic response caching layer
-- [ ] Test error cases with mock data
+- [x] Create API endpoint for generation requests
+- [x] Implement structured prompt templates
+- [x] Implement LLM response parser into normalized schema
+- [x] Add validation and fallback handling for incomplete outputs
+- [x] Write unit tests using mock LLM responses
+- [x] Add basic response caching layer
+- [x] Test error cases with mock data
 
 
 ### Milestone 3: Persistence and Dashboard with Fixtures
@@ -112,7 +112,7 @@ Update this table as implementation advances. **Cost column tracks real API toke
 | --- | --- | --- | --- | --- |
 | M0: Project Foundation + Mocks | In progress | None | $0 | Core mock infrastructure and docs are in place; branch workflow confirmation still pending |
 | M1: Frontend + Mock Integration | Completed | None | $0 | Mock UI flow and schema rendering validated via automated tests |
-| M2: API Logic (Mocked Testing) | Not started | None | $0 | Generate endpoint and parser, tested with mocks |
+| M2: API Logic (Mocked Testing) | Completed | None | $0 | Generate endpoint, parser, fallback validation, caching, and error-path tests are implemented with mocks |
 | M3: Persistence + Fixtures | Not started | None | $0 | Database with fixture data |
 | M4: Background Jobs (Mocked) | Not started | None | $0 | Job infrastructure, mocked generation |
 | M5: PDF Export (Mocked) | Not started | None | $0 | PDF pipeline, tested with fixtures |
