@@ -9,6 +9,7 @@ import {
   type AssemblyStep,
   type GarmentInstructions,
 } from "../__tests__/fixtures/garmentInstructions";
+import { BackgroundJobDemo } from "./components/background-job-demo";
 
 type GuidanceMode = GarmentInstructions["mode"];
 
@@ -234,6 +235,8 @@ export default function Home() {
             </div>
           </SectionCard>
         </section>
+
+        <BackgroundJobDemo description={description} mode={mode} />
 
         <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionCard

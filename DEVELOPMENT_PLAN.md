@@ -69,12 +69,12 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Integrate background job infrastructure; test with mocked generation calls.
 
-- [ ] Integrate Trigger.dev
-- [ ] Move generation to background worker
-- [ ] Add job status polling endpoint
-- [ ] Show generation progress in UI
-- [ ] Handle retry/failure states cleanly
-- [ ] Test full job flow with mocked LLM responses
+- [x] Integrate Trigger.dev
+- [x] Move generation to background worker
+- [x] Add job status polling endpoint
+- [x] Show generation progress in UI
+- [x] Handle retry/failure states cleanly
+- [x] Test full job flow with mocked LLM responses
 
 
 ### Milestone 5: PDF Export (Mocked)
@@ -114,7 +114,7 @@ Update this table as implementation advances. **Cost column tracks real API toke
 | M1: Frontend + Mock Integration | Completed | None | $0 | Mock UI flow and schema rendering validated via automated tests |
 | M2: API Logic (Mocked Testing) | Completed | None | $0 | Generate endpoint, parser, fallback validation, caching, and error-path tests are implemented with mocks |
 | M3: Persistence + Fixtures | Completed | None | $0 | Fixture-backed save/list/fetch APIs, dashboard + detail views, and Supabase target schema are in place |
-| M4: Background Jobs (Mocked) | Not started | None | $0 | Job infrastructure, mocked generation |
+| M4: Background Jobs (Mocked) | Completed | None | $0 | Mock job queue, status polling, progress UI, and retry/failure handling are in place |
 | M5: PDF Export (Mocked) | Not started | None | $0 | PDF pipeline, tested with fixtures |
 | M6: Pre-Launch Integration | Not started | Real API | TBD | Final E2E tests with real API; measure and optimize costs |
 
