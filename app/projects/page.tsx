@@ -6,12 +6,21 @@ export default function ProjectsPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10">
-      <header className="mb-8 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Saved Projects</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Project History Dashboard</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Fixture-backed project history used for Milestone 3 UI and API validation.
-        </p>
+      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Saved Projects</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Project History Dashboard</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            Fixture-backed project history used for Milestone 3 UI and API validation.
+          </p>
+        </div>
+
+        <Link
+          href="/"
+          className="inline-flex rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        >
+          Back to home
+        </Link>
       </header>
 
       <div className="grid gap-4">

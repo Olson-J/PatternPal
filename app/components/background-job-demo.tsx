@@ -93,7 +93,10 @@ export function BackgroundJobDemo({ description, mode }: BackgroundJobDemoProps)
   const failureMessage = job?.status === "failed" ? job.errorMessage ?? "Job failed." : null;
 
   return (
-    <section className="rounded-[2rem] border border-zinc-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
+    <section
+      id="background-jobs"
+      className="rounded-[2rem] border border-zinc-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70"
+    >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
