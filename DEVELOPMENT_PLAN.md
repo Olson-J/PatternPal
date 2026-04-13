@@ -81,11 +81,11 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Build PDF pipeline; test with fixture data.
 
-- [ ] Build printable HTML template
-- [ ] Generate PDF via Puppeteer in background job
-- [ ] Store PDF in Supabase Storage
-- [ ] Add download/export action in UI
-- [ ] Test PDF generation with fixture instructions
+- [x] Build printable HTML template
+- [x] Generate PDF via Puppeteer in background job
+- [x] Store PDF in Supabase Storage
+- [x] Add download/export action in UI
+- [x] Test PDF generation with fixture instructions
 
 **Cost:** Minimal (Puppeteer, no LLM)
 
@@ -115,7 +115,7 @@ Update this table as implementation advances. **Cost column tracks real API toke
 | M2: API Logic (Mocked Testing) | Completed | None | $0 | Generate endpoint, parser, fallback validation, caching, and error-path tests are implemented with mocks |
 | M3: Persistence + Fixtures | Completed | None | $0 | Fixture-backed save/list/fetch APIs, dashboard + detail views, and Supabase target schema are in place |
 | M4: Background Jobs (Mocked) | Completed | None | $0 | Mock job queue, status polling, progress UI, and retry/failure handling are in place |
-| M5: PDF Export (Mocked) | Not started | None | $0 | PDF pipeline, tested with fixtures |
+| M5: PDF Export (Mocked) | Completed | None | $0 | Printable template, mocked storage, background PDF export, and download UI are in place |
 | M6: Pre-Launch Integration | Not started | Real API | TBD | Final E2E tests with real API; measure and optimize costs |
 
 ## Risks and Mitigations
