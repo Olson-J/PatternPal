@@ -3,15 +3,12 @@ import {
   getCachedInstructions,
   setCachedInstructions,
 } from "./cache";
-import { mockGenerateInstructionResponse } from "./mockLlm";
 import { parseInstructionResponse } from "./parser";
 import { buildInstructionPrompt } from "./prompts";
+import { getDefaultInstructionGenerator, type InstructionGenerator } from "./provider";
 import type { GarmentInstructions, GenerateInstructionsRequest } from "./schema";
 
-export type InstructionGenerator = (
-  prompt: string,
-  input: GenerateInstructionsRequest
-) => Promise<string>;
+const inFlightGenerationByKey = new Map<string, Promise<GenerationResult>>();
 
 export type GenerationResult = {
   instructions: GarmentInstructions;
@@ -22,7 +19,7 @@ export type GenerationResult = {
 
 export async function generateInstructions(
   input: GenerateInstructionsRequest,
-  generator: InstructionGenerator = mockGenerateInstructionResponse
+  generator: InstructionGenerator = getDefaultInstructionGenerator()
 ): Promise<GenerationResult> {
   const key = createGenerationCacheKey(input);
   const cached = getCachedInstructions(key);
@@ -36,16 +33,33 @@ export async function generateInstructions(
     };
   }
 
-  const prompt = buildInstructionPrompt(input);
-  const raw = await generator(prompt, input);
-  const parsed = parseInstructionResponse(raw, input);
+  const inFlight = inFlightGenerationByKey.get(key);
+  if (inFlight) {
+    return inFlight;
+  }
 
-  setCachedInstructions(key, parsed.instructions);
+  const generationPromise = (async (): Promise<GenerationResult> => {
+    const prompt = buildInstructionPrompt(input);
+    const raw = await generator(prompt, input);
+    const parsed = parseInstructionResponse(raw, input);
 
-  return {
-    instructions: parsed.instructions,
-    fromCache: false,
-    didFallback: parsed.didFallback,
-    issues: parsed.issues,
-  };
+    if (!parsed.didFallback) {
+      setCachedInstructions(key, parsed.instructions);
+    }
+
+    return {
+      instructions: parsed.instructions,
+      fromCache: false,
+      didFallback: parsed.didFallback,
+      issues: parsed.issues,
+    };
+  })();
+
+  inFlightGenerationByKey.set(key, generationPromise);
+
+  try {
+    return await generationPromise;
+  } finally {
+    inFlightGenerationByKey.delete(key);
+  }
 }

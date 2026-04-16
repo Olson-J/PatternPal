@@ -195,6 +195,7 @@ export function createMockInstructions(
       {
         step: 1,
         description: "Test step 1",
+        details: ["Test detail 1"],
       },
     ],
     finishing: ["Test finishing step 1"],

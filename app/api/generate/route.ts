@@ -1,4 +1,6 @@
 import { generateInstructions } from "@/lib/instructions/generate";
+import { isGenerateRateLimited } from "@/lib/instructions/rateLimit";
+import { isDailyBudgetExceeded, getDailyBudgetRemaining } from "@/lib/instructions/dailyBudget";
 import {
   isGuidanceMode,
   type GenerateInstructionsRequest,
@@ -30,6 +32,21 @@ function validateRequestBody(body: unknown): GenerateInstructionsRequest | null 
 }
 
 export async function POST(request: Request): Promise<Response> {
+  if (isGenerateRateLimited(request)) {
+    return Response.json(
+      { error: "Rate limit exceeded. Please wait before sending another generation request." },
+      { status: 429 }
+    );
+  }
+
+  if (isDailyBudgetExceeded()) {
+    const remaining = getDailyBudgetRemaining();
+    return Response.json(
+      { error: `Daily generation budget exceeded. Remaining: $${remaining.toFixed(2)}.` },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
 
   try {
@@ -55,9 +72,14 @@ export async function POST(request: Request): Promise<Response> {
         issues: result.issues,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("/api/generate failed", error);
+
+    const detail =
+      process.env.NODE_ENV !== "production" && error instanceof Error ? error.message : undefined;
+
     return Response.json(
-      { error: "Unable to generate instructions at this time." },
+      { error: "Unable to generate instructions at this time.", detail },
       { status: 500 }
     );
   }

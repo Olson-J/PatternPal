@@ -18,7 +18,7 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Set up the project and testing infrastructure without touching the real API.
 
-- [ ] Confirm repository setup and branch workflow
+- [x] Confirm repository setup and branch workflow
 - [x] Configure environment variables template (`.env.example`)
 - [x] Add initial app shell and global layout
 - [x] Document local setup and run instructions

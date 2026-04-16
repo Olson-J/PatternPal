@@ -59,4 +59,42 @@ describe("Instruction generation service", () => {
       generateInstructions({ description: "stays", mode: "professional" }, generator)
     ).rejects.toThrow("mock LLM failure");
   });
+
+  it("does not cache fallback results", async () => {
+    const generator = vi.fn(async () => "this is not json");
+    const input = { description: "fallback test garment", mode: "casual" as const };
+
+    const first = await generateInstructions(input, generator);
+    const second = await generateInstructions(input, generator);
+
+    expect(first.didFallback).toBe(true);
+    expect(second.didFallback).toBe(true);
+    expect(second.fromCache).toBe(false);
+    expect(generator).toHaveBeenCalledTimes(2);
+  });
+
+  it("deduplicates concurrent requests for identical input", async () => {
+    const generator = vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      return JSON.stringify({
+        garment: "Concurrent garment",
+        mode: "casual",
+        materials: ["Fabric"],
+        assembly: [{ step: 1, description: "Assemble" }],
+        finishing: ["Finish"],
+      });
+    });
+
+    const input = { description: "concurrent garment", mode: "casual" as const };
+
+    const [first, second] = await Promise.all([
+      generateInstructions(input, generator),
+      generateInstructions(input, generator),
+    ]);
+
+    expect(first.instructions.garment).toBe("Concurrent garment");
+    expect(second.instructions.garment).toBe("Concurrent garment");
+    expect(generator).toHaveBeenCalledTimes(1);
+  });
 });

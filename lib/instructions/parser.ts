@@ -11,24 +11,94 @@ type ParseResult = {
   issues: string[];
 };
 
+function tryParseObject(raw: string): Record<string, unknown> | null {
+  const parsed = JSON.parse(raw);
+  return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+}
+
+function findBalancedJsonObjects(raw: string): string[] {
+  const candidates: string[] = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const char = raw[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") {
+      if (depth === 0) {
+        start = i;
+      }
+
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}") {
+      if (depth === 0) {
+        continue;
+      }
+
+      depth -= 1;
+
+      if (depth === 0 && start !== -1) {
+        candidates.push(raw.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  return candidates;
+}
+
 function safeParseJson(raw: string): Record<string, unknown> | null {
   try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : null;
+    return tryParseObject(raw);
   } catch {
-    const start = raw.indexOf("{");
-    const end = raw.lastIndexOf("}");
+    const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
 
-    if (start === -1 || end === -1 || end <= start) {
-      return null;
+    if (fencedMatch?.[1]) {
+      try {
+        const parsedFence = tryParseObject(fencedMatch[1]);
+        if (parsedFence) {
+          return parsedFence;
+        }
+      } catch {
+        // Continue to other extraction strategies.
+      }
     }
 
-    try {
-      const extracted = JSON.parse(raw.slice(start, end + 1));
-      return extracted && typeof extracted === "object" ? (extracted as Record<string, unknown>) : null;
-    } catch {
-      return null;
+    const candidates = findBalancedJsonObjects(raw);
+
+    for (const candidate of candidates) {
+      try {
+        const parsedCandidate = tryParseObject(candidate);
+        if (parsedCandidate) {
+          return parsedCandidate;
+        }
+      } catch {
+        // Continue scanning candidates.
+      }
     }
+
+    return null;
   }
 }
 

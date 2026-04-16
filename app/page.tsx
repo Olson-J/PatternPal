@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, type ReactNode } from "react";
+import { FormEvent, useState, useEffect, type ReactNode } from "react";
 import {
   createMockInstructions,
   mockCasualStays,
@@ -142,6 +142,21 @@ export default function Home() {
   const [instructions, setInstructions] = useState<GarmentInstructions>(mockCasualStays);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [appMode, setAppMode] = useState<"mock" | "live">("mock");
+
+  useEffect(() => {
+    const fetchMode = async () => {
+      try {
+        const response = await fetch("/api/config");
+        const data = (await response.json()) as { mode: "mock" | "live" };
+        setAppMode(data.mode);
+      } catch {
+        setAppMode("mock");
+      }
+    };
+
+    void fetchMode();
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -156,10 +171,43 @@ export default function Home() {
     setError(null);
     setIsLoading(true);
 
-    window.setTimeout(() => {
-      setInstructions(buildMockInstructions(trimmedDescription, mode));
-      setIsLoading(false);
-    }, 500);
+    // Prepare the request payload
+    const payload = {
+      description: trimmedDescription,
+      mode,
+    };
+
+    // Call the real API endpoint
+    fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error("Rate limit exceeded. Please try again later.");
+          }
+          throw new Error(`API error: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Expect response: { instructions: GarmentInstructions, meta: {...} }
+        if (data && data.instructions) {
+          setInstructions(data.instructions);
+          setError(null);
+        } else {
+          throw new Error("Invalid API response format");
+        }
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Failed to generate instructions");
+        setIsLoading(false);
+      });
   }
 
   function applyExample(example: ExamplePrompt) {
@@ -177,8 +225,10 @@ export default function Home() {
         <section className="grid gap-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur md:grid-cols-[1.1fr_0.9fr] md:p-8 dark:border-white/10 dark:bg-zinc-950/60">
           <div className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">
-              <Badge>Mock-first milestone</Badge>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">No API tokens required yet</span>
+              <Badge>{appMode === "live" ? "Live API mode" : "Mock-first mode"}</Badge>
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                {appMode === "live" ? "Real API integration active" : "No API tokens required"}
+              </span>
             </div>
 
             <div className="space-y-4">
