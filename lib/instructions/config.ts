@@ -38,7 +38,7 @@ export function getInstructionRuntimeConfig(): InstructionRuntimeConfig {
     apiKey: process.env.OPENAI_API_KEY?.trim() ?? "",
     model: process.env.OPENAI_MODEL?.trim() || "gpt-5.4-nano",
     timeoutMs: parseNumber(process.env.OPENAI_TIMEOUT_MS, 30_000),
-    maxOutputTokens: parseNumber(process.env.OPENAI_MAX_OUTPUT_TOKENS, 900),
+    maxOutputTokens: parseNumber(process.env.OPENAI_MAX_OUTPUT_TOKENS, 1600),
     temperature: parseNumber(process.env.OPENAI_TEMPERATURE, 0.2),
     useRealLlm: parseBoolean(process.env.USE_REAL_LLM, false),
     rateLimitWindowMs: parsePositiveInteger(process.env.GENERATION_RATE_LIMIT_WINDOW_MS, 60_000),

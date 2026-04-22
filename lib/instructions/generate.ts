@@ -4,7 +4,7 @@ import {
   setCachedInstructions,
 } from "./cache";
 import { parseInstructionResponse } from "./parser";
-import { buildInstructionPrompt } from "./prompts";
+import { buildInstructionPrompt, buildInstructionRepairPrompt } from "./prompts";
 import { getDefaultInstructionGenerator, type InstructionGenerator } from "./provider";
 import type { GarmentInstructions, GenerateInstructionsRequest } from "./schema";
 
@@ -41,7 +41,17 @@ export async function generateInstructions(
   const generationPromise = (async (): Promise<GenerationResult> => {
     const prompt = buildInstructionPrompt(input);
     const raw = await generator(prompt, input);
-    const parsed = parseInstructionResponse(raw, input);
+    let parsed = parseInstructionResponse(raw, input);
+
+    if (parsed.didFallback) {
+      const repairPrompt = buildInstructionRepairPrompt(input, raw, parsed.issues);
+      const repairedRaw = await generator(repairPrompt, input);
+      const repairedParsed = parseInstructionResponse(repairedRaw, input);
+
+      if (!repairedParsed.didFallback) {
+        parsed = repairedParsed;
+      }
+    }
 
     if (!parsed.didFallback) {
       setCachedInstructions(key, parsed.instructions);

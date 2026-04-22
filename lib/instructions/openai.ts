@@ -1,5 +1,11 @@
+import dns from "node:dns";
+import https from "node:https";
+import { URL } from "node:url";
+
 import { getInstructionRuntimeConfig } from "./config";
 import type { GenerateInstructionsRequest } from "./schema";
+
+dns.setDefaultResultOrder("ipv4first");
 
 type OpenAiResponse = {
   output_text?: string;
@@ -117,6 +123,43 @@ function normalizeModelJsonText(text: string): string {
   return candidate;
 }
 
+async function postJson(url: string, body: Record<string, unknown>, headers: Record<string, string>): Promise<{
+  ok: boolean;
+  status: number;
+  text: () => Promise<string>;
+}> {
+  const target = new URL(url);
+
+  return await new Promise((resolve, reject) => {
+    const request = https.request(
+      {
+        protocol: target.protocol,
+        hostname: target.hostname,
+        port: target.port || 443,
+        path: `${target.pathname}${target.search}`,
+        method: "POST",
+        headers,
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+
+        response.on("data", (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        response.on("end", () => {
+          const responseText = Buffer.concat(chunks).toString("utf8");
+          resolve({
+            ok: Boolean(response.statusCode && response.statusCode >= 200 && response.statusCode < 300),
+            status: response.statusCode ?? 0,
+            text: async () => responseText,
+          });
+        });
+      }
+    );
+
+    request.on("error", reject);
+    request.end(JSON.stringify(body));
+  });
+}
+
 export async function generateOpenAiInstructionResponse(
   prompt: string,
   _input: GenerateInstructionsRequest
@@ -131,27 +174,23 @@ export async function generateOpenAiInstructionResponse(
   const timeoutId = setTimeout(() => controller.abort(), Math.max(1, config.timeoutMs));
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: config.model,
-        input: prompt,
-        temperature: config.temperature,
-        max_output_tokens: config.maxOutputTokens,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "patternpal_instructions",
-            strict: true,
-            schema: instructionSchema,
-          },
+    const response = await postJson("https://api.openai.com/v1/responses", {
+      model: config.model,
+      input: prompt,
+      temperature: config.temperature,
+      max_output_tokens: config.maxOutputTokens,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "patternpal_instructions",
+          strict: true,
+          schema: instructionSchema,
         },
-      }),
-      signal: controller.signal,
+      },
+    }, {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     });
 
     if (!response.ok) {
@@ -159,11 +198,21 @@ export async function generateOpenAiInstructionResponse(
       throw new Error(`OpenAI request failed with status ${response.status}: ${details}`);
     }
 
-    const payload = (await response.json()) as OpenAiResponse;
+    const payload = JSON.parse(await response.text()) as OpenAiResponse;
     return normalizeModelJsonText(extractOutputText(payload));
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`OpenAI request timed out after ${config.timeoutMs}ms.`);
+    }
+
+    if (error instanceof Error && (error.name === "TypeError" || error.name === "Error")) {
+      const message = error.message.toLowerCase();
+      if (message.includes("fetch failed") || message.includes("connect timeout")) {
+        throw new Error(
+          `OpenAI request could not connect to api.openai.com within the network timeout window. ` +
+            `This usually means a local connectivity, proxy, or DNS issue. Original error: ${error.message}`
+        );
+      }
     }
 
     throw error;

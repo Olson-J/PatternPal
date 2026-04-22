@@ -9,14 +9,14 @@ import {
   type AssemblyStep,
   type GarmentInstructions,
 } from "../__tests__/fixtures/garmentInstructions";
-import { BackgroundJobDemo } from "./components/background-job-demo";
 
-type GuidanceMode = GarmentInstructions["mode"];
+type ApiGuidanceMode = GarmentInstructions["mode"];
+type FormGuidanceMode = ApiGuidanceMode | "mock";
 
 type ExamplePrompt = {
   label: string;
   value: string;
-  mode: GuidanceMode;
+  mode: FormGuidanceMode;
 };
 
 const examplePrompts: ExamplePrompt[] = [
@@ -35,7 +35,7 @@ function capitalizeLabel(value: string): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-function pickMockFixture(description: string, mode: GuidanceMode): GarmentInstructions {
+function pickMockFixture(description: string, mode: ApiGuidanceMode): GarmentInstructions {
   const normalized = description.toLowerCase();
 
   if (normalized.includes("dress")) {
@@ -49,13 +49,14 @@ function pickMockFixture(description: string, mode: GuidanceMode): GarmentInstru
   return mode === "professional" ? mockProfessionalStays : mockCasualStays;
 }
 
-function buildMockInstructions(description: string, mode: GuidanceMode): GarmentInstructions {
-  const baseFixture = pickMockFixture(description, mode);
+function buildMockInstructions(description: string, mode: FormGuidanceMode): GarmentInstructions {
+  const effectiveMode: ApiGuidanceMode = mode === "professional" ? "professional" : "casual";
+  const baseFixture = pickMockFixture(description, effectiveMode);
   const garmentName = capitalizeLabel(description);
 
   return createMockInstructions({
     garment: garmentName,
-    mode,
+    mode: effectiveMode,
     materials: baseFixture.materials,
     assembly: baseFixture.assembly,
     finishing: baseFixture.finishing,
@@ -138,11 +139,12 @@ function AssemblyList({ steps }: { steps: AssemblyStep[] }) {
 
 export default function Home() {
   const [description, setDescription] = useState("18th-century stays");
-  const [mode, setMode] = useState<GuidanceMode>("casual");
+  const [mode, setMode] = useState<FormGuidanceMode>("casual");
   const [instructions, setInstructions] = useState<GarmentInstructions>(mockCasualStays);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<"mock" | "live">("mock");
+  const [lastGenerationSource, setLastGenerationSource] = useState<"mock" | "api">("mock");
 
   useEffect(() => {
     const fetchMode = async () => {
@@ -171,6 +173,15 @@ export default function Home() {
     setError(null);
     setIsLoading(true);
 
+    if (mode === "mock") {
+      window.setTimeout(() => {
+        setInstructions(buildMockInstructions(trimmedDescription, mode));
+        setLastGenerationSource("mock");
+        setIsLoading(false);
+      }, 250);
+      return;
+    }
+
     // Prepare the request payload
     const payload = {
       description: trimmedDescription,
@@ -185,12 +196,21 @@ export default function Home() {
       },
       body: JSON.stringify(payload),
     })
-      .then((response) => {
+      .then(async (response) => {
         if (!response.ok) {
-          if (response.status === 429) {
-            throw new Error("Rate limit exceeded. Please try again later.");
+          let detail = "";
+
+          try {
+            const errorBody = (await response.json()) as { error?: string; detail?: string };
+            detail = errorBody.detail ? ` ${errorBody.detail}` : "";
+          } catch {
+            // Ignore JSON parsing errors and fall back to a status-only message.
           }
-          throw new Error(`API error: ${response.status}`);
+
+          if (response.status === 429) {
+            throw new Error(`Rate limit exceeded. Please try again later.${detail}`);
+          }
+          throw new Error(`API error: ${response.status}${detail}`);
         }
         return response.json();
       })
@@ -198,6 +218,7 @@ export default function Home() {
         // Expect response: { instructions: GarmentInstructions, meta: {...} }
         if (data && data.instructions) {
           setInstructions(data.instructions);
+          setLastGenerationSource("api");
           setError(null);
         } else {
           throw new Error("Invalid API response format");
@@ -215,6 +236,7 @@ export default function Home() {
     setMode(example.mode);
     setError(null);
     setInstructions(buildMockInstructions(example.value, example.mode));
+    setLastGenerationSource("mock");
   }
 
   return (
@@ -247,23 +269,6 @@ export default function Home() {
               </a>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800 dark:text-amber-200">Cost</p>
-                <p className="mt-2 text-2xl font-semibold">$0</p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Until the final API milestone</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Mode</p>
-                <p className="mt-2 text-2xl font-semibold">Casual / Professional</p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">Switch tone and construction detail</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Flow</p>
-                <p className="mt-2 text-2xl font-semibold">Generate</p>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">View, save, export later</p>
-              </div>
-            </div>
           </div>
 
           <SectionCard
@@ -286,12 +291,10 @@ export default function Home() {
           </SectionCard>
         </section>
 
-        <BackgroundJobDemo description={description} mode={mode} />
-
         <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionCard
-            title="Garment prompt"
-            description="This is the milestone-one frontend. The form, loading state, and validation are all local and mock-driven."
+            title="Get Started!"
+            description="Choose Mock for instant local fixture output, or Casual/Professional to generate through the API pipeline."
           >
             <form className="space-y-5" onSubmit={handleSubmit}>
               <label className="block space-y-2">
@@ -307,10 +310,11 @@ export default function Home() {
 
               <fieldset className="space-y-3">
                 <legend className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Guidance mode</legend>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   {([
                     { label: "Casual", value: "casual" },
                     { label: "Professional", value: "professional" },
+                    { label: "Mock", value: "mock" },
                   ] as const).map((option) => (
                     <label
                       key={option.value}
@@ -345,7 +349,7 @@ export default function Home() {
                 disabled={isLoading}
                 className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
               >
-                {isLoading ? "Generating mock guidance..." : "Generate mock guidance"}
+                {isLoading ? "Generating guidance..." : "Generate"}
               </button>
             </form>
           </SectionCard>
@@ -365,7 +369,9 @@ export default function Home() {
                 <div className="space-y-6">
                   <div className="flex flex-wrap items-center gap-3">
                     <Badge>{instructions.mode} mode</Badge>
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Generated from fixture data</span>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      {lastGenerationSource === "api" ? "Generated through API" : "Generated from local fixture data"}
+                    </span>
                   </div>
 
                   <div>
@@ -404,9 +410,11 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
-                    This result is mock-generated. Once Milestone 2 is ready, the same schema will receive parsed API output.
-                  </div>
+                  {lastGenerationSource === "mock" ? (
+                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
+                      This result is mock-generated using local fixture data.
+                    </div>
+                  ) : null}
                 </div>
               )}
             </SectionCard>

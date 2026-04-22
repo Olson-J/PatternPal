@@ -70,6 +70,38 @@ describe("Instruction generation service", () => {
     expect(first.didFallback).toBe(true);
     expect(second.didFallback).toBe(true);
     expect(second.fromCache).toBe(false);
+    expect(generator).toHaveBeenCalledTimes(4);
+  });
+
+  it("retries once and returns repaired instructions when second attempt is valid", async () => {
+    const generator = vi
+      .fn<[], Promise<string>>()
+      .mockImplementationOnce(async () => "this is not json")
+      .mockImplementationOnce(
+        async () =>
+          JSON.stringify({
+            garment: "Repaired chemise",
+            mode: "professional",
+            materials: ["Fine cotton", "Linen thread"],
+            assembly: [
+              { step: 1, description: "Draft pattern pieces", details: ["Front", "Back", "Sleeves"] },
+              { step: 2, description: "Sew body seams", details: ["French seams"] },
+              { step: 3, description: "Attach sleeves and gussets", details: [] },
+            ],
+            finishing: ["Hem neckline and cuffs"],
+            notes: "Use narrow rolled hems for durability.",
+          })
+      );
+
+    const result = await generateInstructions(
+      { description: "19th century simple cotton chemise", mode: "professional" },
+      generator
+    );
+
+    expect(result.didFallback).toBe(false);
+    expect(result.fromCache).toBe(false);
+    expect(result.instructions.garment).toBe("Repaired chemise");
+    expect(result.instructions.assembly.length).toBeGreaterThanOrEqual(3);
     expect(generator).toHaveBeenCalledTimes(2);
   });
 
