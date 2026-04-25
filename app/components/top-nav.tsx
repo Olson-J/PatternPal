@@ -6,13 +6,11 @@ import { usePathname } from "next/navigation";
 type NavItem = {
   href: string;
   label: string;
-  isAnchor?: boolean;
 };
 
 const navItems: NavItem[] = [
   { href: "/", label: "Home" },
-  { href: "/projects", label: "Saved Projects" },
-  { href: "/#background-jobs", label: "Background Jobs", isAnchor: true },
+  { href: "/projects", label: "Project History" },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -30,21 +28,9 @@ export function TopNav() {
     <nav className="fixed left-4 top-4 z-50">
       <div className="flex flex-wrap items-center gap-2 rounded-full border border-white/70 bg-white/90 p-2 shadow-[0_12px_40px_rgba(15,23,42,0.14)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
         {navItems.map((item) => {
-          const active = !item.isAnchor && isActivePath(pathname, item.href);
+          const active = isActivePath(pathname, item.href);
           const commonClassName =
             "rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-amber-500/30";
-
-          if (item.isAnchor) {
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`${commonClassName} text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-50`}
-              >
-                {item.label}
-              </Link>
-            );
-          }
 
           return (
             <Link

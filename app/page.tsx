@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect, type ReactNode } from "react";
+import { FormEvent, useState, useEffect, useRef, type ReactNode } from "react";
 import {
   createMockInstructions,
   mockCasualStays,
@@ -11,12 +11,11 @@ import {
 } from "../__tests__/fixtures/garmentInstructions";
 
 type ApiGuidanceMode = GarmentInstructions["mode"];
-type FormGuidanceMode = ApiGuidanceMode | "mock";
 
 type ExamplePrompt = {
   label: string;
   value: string;
-  mode: FormGuidanceMode;
+  mode: ApiGuidanceMode;
 };
 
 const examplePrompts: ExamplePrompt[] = [
@@ -49,7 +48,7 @@ function pickMockFixture(description: string, mode: ApiGuidanceMode): GarmentIns
   return mode === "professional" ? mockProfessionalStays : mockCasualStays;
 }
 
-function buildMockInstructions(description: string, mode: FormGuidanceMode): GarmentInstructions {
+function buildMockInstructions(description: string, mode: ApiGuidanceMode): GarmentInstructions {
   const effectiveMode: ApiGuidanceMode = mode === "professional" ? "professional" : "casual";
   const baseFixture = pickMockFixture(description, effectiveMode);
   const garmentName = capitalizeLabel(description);
@@ -138,11 +137,14 @@ function AssemblyList({ steps }: { steps: AssemblyStep[] }) {
 }
 
 export default function Home() {
+  const resultsSectionRef = useRef<HTMLElement | null>(null);
   const [description, setDescription] = useState("18th-century stays");
-  const [mode, setMode] = useState<FormGuidanceMode>("casual");
+  const [mode, setMode] = useState<ApiGuidanceMode>("casual");
   const [instructions, setInstructions] = useState<GarmentInstructions>(mockCasualStays);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<"mock" | "live">("mock");
   const [lastGenerationSource, setLastGenerationSource] = useState<"mock" | "api">("mock");
 
@@ -160,6 +162,12 @@ export default function Home() {
     void fetchMode();
   }, []);
 
+  function scrollToResults(): void {
+    window.requestAnimationFrame(() => {
+      resultsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -171,16 +179,8 @@ export default function Home() {
     }
 
     setError(null);
+    setSaveStatus(null);
     setIsLoading(true);
-
-    if (mode === "mock") {
-      window.setTimeout(() => {
-        setInstructions(buildMockInstructions(trimmedDescription, mode));
-        setLastGenerationSource("mock");
-        setIsLoading(false);
-      }, 250);
-      return;
-    }
 
     // Prepare the request payload
     const payload = {
@@ -220,6 +220,7 @@ export default function Home() {
           setInstructions(data.instructions);
           setLastGenerationSource("api");
           setError(null);
+          scrollToResults();
         } else {
           throw new Error("Invalid API response format");
         }
@@ -235,8 +236,54 @@ export default function Home() {
     setDescription(example.value);
     setMode(example.mode);
     setError(null);
+    setSaveStatus(null);
     setInstructions(buildMockInstructions(example.value, example.mode));
     setLastGenerationSource("mock");
+    scrollToResults();
+  }
+
+  function handleSaveProject() {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveStatus(null);
+
+    const payload = {
+      title: instructions.garment,
+      description: description.trim() || instructions.garment,
+      mode: instructions.mode,
+      instructions,
+    };
+
+    fetch("/api/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const message = response.status === 400
+            ? "Could not save project due to invalid data."
+            : `Failed to save project (status ${response.status}).`;
+          throw new Error(message);
+        }
+
+        return response.json();
+      })
+      .then(() => {
+        setSaveStatus("Saved to project history.");
+      })
+      .catch((saveError: unknown) => {
+        const message = saveError instanceof Error ? saveError.message : "Failed to save project.";
+        setSaveStatus(message);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
   }
 
   return (
@@ -261,12 +308,6 @@ export default function Home() {
                 Build, test, and refine the full experience against mock fixtures first. That keeps the UI stable,
                 the workflow reviewable, and the real API cost deferred until launch validation.
               </p>
-              <a
-                href="/projects"
-                className="inline-flex rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-              >
-                Open project history dashboard
-              </a>
             </div>
 
           </div>
@@ -291,10 +332,10 @@ export default function Home() {
           </SectionCard>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="space-y-8">
           <SectionCard
             title="Get Started!"
-            description="Choose Mock for instant local fixture output, or Casual/Professional to generate through the API pipeline."
+            description="Choose casual or professional mode to generate through the API pipeline."
           >
             <form className="space-y-5" onSubmit={handleSubmit}>
               <label className="block space-y-2">
@@ -310,11 +351,10 @@ export default function Home() {
 
               <fieldset className="space-y-3">
                 <legend className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Guidance mode</legend>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {([
                     { label: "Casual", value: "casual" },
                     { label: "Professional", value: "professional" },
-                    { label: "Mock", value: "mock" },
                   ] as const).map((option) => (
                     <label
                       key={option.value}
@@ -354,71 +394,85 @@ export default function Home() {
             </form>
           </SectionCard>
 
-          <div className="space-y-8">
+          <section ref={resultsSectionRef}>
             <SectionCard
               title="Structured results"
               description="These sections mirror the API response shape we will later normalize from the live model."
             >
-              {isLoading ? (
-                <div className="space-y-4">
-                  <div className="h-4 w-2/3 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" />
-                  <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
-                  <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="h-4 w-2/3 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
+                <div className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge>{instructions.mode} mode</Badge>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {lastGenerationSource === "api" ? "Generated through API" : "Generated from local fixture data"}
+                  </span>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Badge>{instructions.mode} mode</Badge>
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {lastGenerationSource === "api" ? "Generated through API" : "Generated from local fixture data"}
-                    </span>
-                  </div>
 
-                  <div>
-                    <h3 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{instructions.garment}</h3>
-                    <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                      {instructions.notes ?? "No additional notes provided."}
-                    </p>
-                  </div>
+                <div>
+                  <h3 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{instructions.garment}</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                    {instructions.notes ?? "No additional notes provided."}
+                  </p>
+                </div>
 
-                  <div className="grid gap-6 xl:grid-cols-3">
-                    <div className="xl:col-span-1">
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                        Materials
-                      </h4>
-                      <div className="mt-4">
-                        <FeatureList items={instructions.materials} />
-                      </div>
-                    </div>
-
-                    <div className="xl:col-span-2">
-                      <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                        Assembly
-                      </h4>
-                      <div className="mt-4">
-                        <AssemblyList steps={instructions.assembly} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
+                <div className="grid gap-6 xl:grid-cols-3">
+                  <div className="xl:col-span-1">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-                      Finishing
+                      Materials
                     </h4>
-                    <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
-                      <FeatureList items={instructions.finishing} />
+                    <div className="mt-4">
+                      <FeatureList items={instructions.materials} />
                     </div>
                   </div>
 
-                  {lastGenerationSource === "mock" ? (
-                    <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
-                      This result is mock-generated using local fixture data.
+                  <div className="xl:col-span-2">
+                    <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                      Assembly
+                    </h4>
+                    <div className="mt-4">
+                      <AssemblyList steps={instructions.assembly} />
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                    Finishing
+                  </h4>
+                  <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                    <FeatureList items={instructions.finishing} />
+                  </div>
+                </div>
+
+                {lastGenerationSource === "mock" ? (
+                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
+                    This result is mock-generated using local fixture data.
+                  </div>
+                ) : null}
+
+                <div className="space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                  <button
+                    type="button"
+                    onClick={handleSaveProject}
+                    disabled={isSaving || isLoading}
+                    className="inline-flex w-full items-center justify-center rounded-2xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                  >
+                    {isSaving ? "Saving result..." : "Save result"}
+                  </button>
+                  {saveStatus ? (
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">{saveStatus}</p>
                   ) : null}
                 </div>
-              )}
+              </div>
+            )}
             </SectionCard>
-          </div>
+          </section>
         </section>
       </main>
     </div>
