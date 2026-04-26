@@ -1,14 +1,28 @@
 import { getPdfExportJob, getPdfExportDownloadBuffer } from "@/lib/pdf/queue";
+import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, context: RouteContext): Promise<Response> {
+export async function GET(request: Request, context: RouteContext): Promise<Response> {
+  const userId = await resolveProjectUserIdFromRequest(request);
+
+  if (!userId) {
+    return Response.json(
+      {
+        error: isSupabaseAuthEnabled()
+          ? "Authentication required. Include a valid Supabase access token."
+          : "Unable to resolve project user.",
+      },
+      { status: 401 }
+    );
+  }
+
   const { id } = await context.params;
   const job = getPdfExportJob(id);
 
-  if (!job || job.status !== "completed" || !job.storagePath) {
+  if (!job || job.userId !== userId || job.status !== "completed" || !job.storagePath) {
     return Response.json({ error: "Export not ready." }, { status: 404 });
   }
 

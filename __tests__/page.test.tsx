@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import Home from "../app/page";
+import Home from "../app/app/page";
 import { mockCasualStays, mockProfessionalStays } from "./fixtures/garmentInstructions";
 
 const scrollIntoViewMock = vi.fn();
@@ -42,6 +42,36 @@ describe("Milestone 1 UX paths", () => {
         return createJsonResponse(201, { project: { id: "proj-test-1" } });
       }
 
+      if (url.includes("/api/project-exports") && (init?.method ?? "GET") === "POST") {
+        return createJsonResponse(202, {
+          job: {
+            id: "pdf-job-1",
+            status: "queued",
+            progress: 0,
+            stage: "Queued",
+          },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1/download")) {
+        return new Response("pdf-bytes", {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1")) {
+        return createJsonResponse(200, {
+          job: {
+            id: "pdf-job-1",
+            status: "completed",
+            progress: 100,
+            stage: "Completed",
+            fileName: "patternpal-export.pdf",
+          },
+        });
+      }
+
       throw new Error(`Unmocked URL: ${url}`);
     });
 
@@ -56,7 +86,7 @@ describe("Milestone 1 UX paths", () => {
   it("renders structured results sections from mock data", () => {
     render(<Home />);
 
-    expect(screen.getByText("Structured results")).toBeInTheDocument();
+    expect(screen.getByText("Project Results")).toBeInTheDocument();
     expect(screen.getByText("Materials")).toBeInTheDocument();
     expect(screen.getByText("Assembly")).toBeInTheDocument();
     expect(screen.getByText("Finishing")).toBeInTheDocument();
@@ -101,6 +131,36 @@ describe("Milestone 1 UX paths", () => {
 
       if (url.includes("/api/projects")) {
         return createJsonResponse(201, { project: { id: "proj-test-1" } });
+      }
+
+      if (url.includes("/api/project-exports") && (init?.method ?? "GET") === "POST") {
+        return createJsonResponse(202, {
+          job: {
+            id: "pdf-job-1",
+            status: "queued",
+            progress: 0,
+            stage: "Queued",
+          },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1/download")) {
+        return new Response("pdf-bytes", {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1")) {
+        return createJsonResponse(200, {
+          job: {
+            id: "pdf-job-1",
+            status: "completed",
+            progress: 100,
+            stage: "Completed",
+            fileName: "patternpal-export.pdf",
+          },
+        });
       }
 
       throw new Error(`Unmocked URL: ${url}`);
@@ -152,13 +212,34 @@ describe("Milestone 1 UX paths", () => {
     await user.click(screen.getByRole("button", { name: "Generate" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Save result" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save results to project history" })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "Save result" }));
+    await user.click(screen.getByRole("button", { name: "Save results to project history" }));
 
     await waitFor(() => {
       expect(screen.getByText("Saved to project history.")).toBeInTheDocument();
     });
+  });
+
+  it("exports generated results to PDF from the results section", async () => {
+    const user = userEvent.setup();
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(<Home />);
+
+    await user.click(screen.getByRole("button", { name: "Generate" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Export PDF" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Export PDF" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("PDF export complete. Download started.")).toBeInTheDocument();
+    });
+
+    expect(anchorClickSpy).toHaveBeenCalled();
   });
 });

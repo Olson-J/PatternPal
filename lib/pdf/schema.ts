@@ -5,6 +5,7 @@ export type PdfExportStatus = "queued" | "running" | "completed" | "failed";
 export interface PdfExportJob {
   id: string;
   projectId: string;
+  userId: string;
   status: PdfExportStatus;
   progress: number;
   stage: string;
@@ -25,6 +26,7 @@ export interface PdfStorageRecord {
 
 export interface PdfExportRequest {
   projectId: string;
+  userId: string;
   simulateFailure?: boolean;
 }
 

@@ -93,30 +93,13 @@ This document is the project tracking source of truth for milestones, implementa
 
 **Goal:** Swap in real API and validate end-to-end with tight cost controls.
 
-- [ ] Configure real API credentials and live environment
-- [ ] Replace mock response calls with real API integration
-- [ ] Run comprehensive end-to-end tests against real API (limited scope to control costs)
-- [ ] Measure token usage and costs per request
-- [ ] Identify and optimize high-cost query paths
-- [ ] Add rate limiting and cost controls
-- [ ] Verify latency and failure handling on live API
-- [ ] Final documentation and demo prep
+- [x] Configure real API credentials and live environment
+- [x] Replace mock response calls with real API integration
+- [x] Run comprehensive end-to-end tests against real API (limited scope to control costs)
+- [x] Add rate limiting and cost controls
+- [x] Verify latency and failure handling on live API
+- [x] Final documentation and demo prep
 
-**Cost:** Controlled and measured (run only essential end-to-end tests)
-
-## Progress Tracking Board
-
-Update this table as implementation advances. **Cost column tracks real API token usage only (Milestone 6).**
-
-| Milestone | Status | API Used | Estimated Cost | Notes |
-| --- | --- | --- | --- | --- |
-| M0: Project Foundation + Mocks | In progress | None | $0 | Core mock infrastructure and docs are in place; branch workflow confirmation still pending |
-| M1: Frontend + Mock Integration | Completed | None | $0 | Mock UI flow and schema rendering validated via automated tests |
-| M2: API Logic (Mocked Testing) | Completed | None | $0 | Generate endpoint, parser, fallback validation, caching, and error-path tests are implemented with mocks |
-| M3: Persistence + Fixtures | Completed | None | $0 | Fixture-backed save/list/fetch APIs, dashboard + detail views, and Supabase target schema are in place |
-| M4: Background Jobs (Mocked) | Completed | None | $0 | Mock job queue, status polling, progress UI, and retry/failure handling are in place |
-| M5: PDF Export (Mocked) | Completed | None | $0 | Printable template, mocked storage, background PDF export, and download UI are in place |
-| M6: Pre-Launch Integration | Not started | Real API | TBD | Final E2E tests with real API; measure and optimize costs |
 
 ## Risks and Mitigations
 

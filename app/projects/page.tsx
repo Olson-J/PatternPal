@@ -1,17 +1,15 @@
 import Link from "next/link";
-import { listProjects } from "@/lib/projects/store";
+import { listProjectsForUser } from "@/lib/projects/repository";
+import { getDefaultProjectUserId } from "@/lib/projects/user";
 
-export default function ProjectsPage() {
-  const projects = listProjects();
+export default async function ProjectsPage() {
+  const projects = await listProjectsForUser(getDefaultProjectUserId());
 
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10">
       <header className="mb-8 space-y-2">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Saved Projects</p>
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Project History Dashboard</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Fixture-backed project history used for Milestone 3 UI and API validation.
-        </p>
       </header>
 
       <div className="grid gap-4">

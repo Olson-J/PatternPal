@@ -51,7 +51,7 @@ export default function SignInPage() {
       }
 
       clearGuestMode();
-      window.location.assign("/app");
+      window.location.assign("/");
     } catch (signinError) {
       setError(signinError instanceof Error ? signinError.message : "Unable to sign in.");
     } finally {
@@ -61,7 +61,7 @@ export default function SignInPage() {
 
   function continueAsGuest(): void {
     enableGuestMode();
-    window.location.assign("/app");
+    window.location.assign("/");
   }
 
   return (

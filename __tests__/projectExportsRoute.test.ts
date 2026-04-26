@@ -16,6 +16,24 @@ describe("project PDF export routes", () => {
     resetPdfExports();
     resetPdfStorage();
     vi.useFakeTimers();
+    vi.unstubAllEnvs();
+  });
+
+  it("requires auth token when Supabase auth config is enabled", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_ANON_KEY", "anon-test-key");
+
+    const response = await postProjectExport(
+      new Request("http://localhost:3000/api/project-exports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: fixtureProjects[0].id }),
+      })
+    );
+
+    const json = (await response.json()) as { error: string };
+    expect(response.status).toBe(401);
+    expect(json.error).toMatch(/Authentication required/i);
   });
 
   it("queues and completes an export job", async () => {

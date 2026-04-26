@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getProjectById } from "@/lib/projects/store";
+import { getProjectByIdForUser } from "@/lib/projects/repository";
+import { getDefaultProjectUserId } from "@/lib/projects/user";
 import { PdfExportPanel } from "@/app/components/pdf-export-panel";
 
 type ProjectDetailPageProps = {
@@ -8,7 +9,7 @@ type ProjectDetailPageProps = {
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { id } = await params;
-  const project = getProjectById(id);
+  const project = await getProjectByIdForUser(id, getDefaultProjectUserId());
 
   if (!project) {
     notFound();
@@ -17,7 +18,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   return (
     <main className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10">
       <header className="mb-8 space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Project Detail</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Project Details</p>
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">{project.title}</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{project.description}</p>
       </header>

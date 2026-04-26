@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "../app/api/projects/route";
 import { fixtureProjects } from "../lib/projects/fixtures";
 import { resetProjectStore } from "../lib/projects/store";
@@ -8,10 +8,22 @@ const sampleInstructions = fixtureProjects[0].instructions;
 describe("/api/projects route", () => {
   beforeEach(() => {
     resetProjectStore();
+    vi.unstubAllEnvs();
+  });
+
+  it("requires auth token when Supabase auth config is enabled", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("SUPABASE_ANON_KEY", "anon-test-key");
+
+    const response = await GET(new Request("http://localhost:3000/api/projects"));
+    const json = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(401);
+    expect(json.error).toMatch(/Authentication required/i);
   });
 
   it("lists seeded fixture projects", async () => {
-    const response = await GET();
+    const response = await GET(new Request("http://localhost:3000/api/projects"));
     const json = (await response.json()) as {
       projects: Array<{ id: string; title: string }>;
     };

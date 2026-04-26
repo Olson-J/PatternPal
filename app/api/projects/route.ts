@@ -2,11 +2,16 @@ import {
   isGarmentInstructions,
   isGuidanceMode,
 } from "@/lib/instructions/schema";
-import { listProjects, saveProject } from "@/lib/projects/store";
+import { listProjectsForUser, saveProjectForUser } from "@/lib/projects/repository";
 import type { SaveProjectRequest } from "@/lib/projects/schema";
+import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 
 function badRequest(message: string): Response {
   return Response.json({ error: message }, { status: 400 });
+}
+
+function unauthorized(message: string): Response {
+  return Response.json({ error: message }, { status: 401 });
 }
 
 function validateSaveRequest(body: unknown): SaveProjectRequest | null {
@@ -40,8 +45,18 @@ function validateSaveRequest(body: unknown): SaveProjectRequest | null {
   };
 }
 
-export async function GET(): Promise<Response> {
-  const projects = listProjects();
+export async function GET(request: Request): Promise<Response> {
+  const userId = await resolveProjectUserIdFromRequest(request);
+
+  if (!userId) {
+    return unauthorized(
+      isSupabaseAuthEnabled()
+        ? "Authentication required. Include a valid Supabase access token."
+        : "Unable to resolve project user."
+    );
+  }
+
+  const projects = await listProjectsForUser(userId);
   return Response.json({ projects });
 }
 
@@ -62,6 +77,16 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const project = saveProject(input);
+  const userId = await resolveProjectUserIdFromRequest(request);
+
+  if (!userId) {
+    return unauthorized(
+      isSupabaseAuthEnabled()
+        ? "Authentication required. Include a valid Supabase access token."
+        : "Unable to resolve project user."
+    );
+  }
+
+  const project = await saveProjectForUser({ ...input, userId });
   return Response.json({ project }, { status: 201 });
 }

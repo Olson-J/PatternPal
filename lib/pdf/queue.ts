@@ -1,4 +1,4 @@
-import { getProjectById } from "../projects/store";
+import { getProjectByIdForUser } from "../projects/repository";
 import { generateProjectPdfBuffer } from "./generator";
 import { getPdfRecord, storePdfRecord } from "./storage";
 import type { PdfExportJob, PdfExportRequest } from "./schema";
@@ -52,7 +52,7 @@ async function executeExport(jobId: string, request: PdfExportRequest): Promise<
   });
 
   try {
-    const project = getProjectById(request.projectId);
+    const project = await getProjectByIdForUser(request.projectId, request.userId);
 
     if (!project) {
       throw new Error("Project not found.");
@@ -101,6 +101,7 @@ export function enqueuePdfExport(request: PdfExportRequest): PdfExportJob {
   const job: PdfExportJob = {
     id: createExportJobId(),
     projectId: request.projectId,
+    userId: request.userId,
     status: "queued",
     progress: 5,
     stage: "Queued for PDF worker",

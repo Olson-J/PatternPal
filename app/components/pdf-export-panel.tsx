@@ -116,12 +116,9 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
     <section className="rounded-[2rem] border border-zinc-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
-            Milestone 5
-          </p>
           <h2 className="mt-1 text-xl font-semibold text-zinc-950 dark:text-zinc-50">PDF export</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-            Generate a printable PDF for {projectTitle} using the mocked background export pipeline.
+            Generate a printable PDF for {projectTitle} here!
           </p>
         </div>
 
@@ -134,16 +131,6 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
           {isSubmitting ? "Starting export..." : "Export PDF"}
         </button>
       </div>
-
-      <label className="mt-4 flex items-center gap-3 text-sm text-zinc-700 dark:text-zinc-300">
-        <input
-          type="checkbox"
-          checked={simulateFailure}
-          onChange={(event) => setSimulateFailure(event.target.checked)}
-          className="h-4 w-4 accent-amber-500"
-        />
-        Simulate export failure for retry-path testing
-      </label>
 
       {error ? (
         <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
