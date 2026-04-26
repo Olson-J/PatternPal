@@ -4,6 +4,7 @@ export type PdfExportStatus = "queued" | "running" | "completed" | "failed";
 
 export interface PdfExportJob {
   id: string;
+  triggerRunId?: string;
   projectId: string;
   userId: string;
   status: PdfExportStatus;

@@ -57,3 +57,8 @@ export function saveProject(input: SaveProjectInput): ProjectRecord {
   projectStore.set(project.id, project);
   return project;
 }
+
+export function deleteProjectById(id: string): boolean {
+  ensureSeedData();
+  return projectStore.delete(id);
+}

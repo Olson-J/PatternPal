@@ -112,7 +112,7 @@ export default function SignUpPage() {
       }
 
       clearGuestMode();
-      window.location.assign("/");
+      window.location.assign("/app");
 
       setPassword("");
     } catch (signupError) {
@@ -123,9 +123,9 @@ export default function SignUpPage() {
   }
 
   function continueAsGuest(): void {
-      enableGuestMode();
-      window.location.assign("/");
-    }
+    enableGuestMode();
+    window.location.assign("/app");
+  }
 
   return (
     <main className="relative mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10 sm:px-10">
@@ -139,7 +139,7 @@ export default function SignUpPage() {
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           {supabaseResult.error ? (
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            <p className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-100">
               {supabaseResult.error}
             </p>
           ) : null}
@@ -151,7 +151,7 @@ export default function SignUpPage() {
               onChange={(event) => setDisplayName(event.target.value)}
               type="text"
               autoComplete="name"
-              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-400"
               placeholder="Your name"
             />
           </label>
@@ -164,7 +164,7 @@ export default function SignUpPage() {
               type="email"
               autoComplete="email"
               required
-              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-400"
               placeholder="you@example.com"
             />
           </label>
@@ -178,7 +178,7 @@ export default function SignUpPage() {
               autoComplete="new-password"
               required
               minLength={8}
-              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+              className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-400"
               placeholder="At least 8 characters"
             />
           </label>
@@ -198,7 +198,7 @@ export default function SignUpPage() {
           <button
             type="submit"
             disabled={isSubmitting || !supabase}
-            className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
           >
             {isSubmitting ? "Creating account..." : "Create account"}
           </button>
@@ -207,7 +207,7 @@ export default function SignUpPage() {
         <button
           type="button"
           onClick={continueAsGuest}
-          className="mt-4 inline-flex rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+          className="mt-4 inline-flex rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-900 transition hover:bg-blue-100 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-100 dark:hover:bg-blue-500/20"
         >
           Continue as guest
         </button>
@@ -217,7 +217,7 @@ export default function SignUpPage() {
 
         <p className="mt-6 text-sm text-zinc-600 dark:text-zinc-300">
           Already have an account?{" "}
-          <Link href="/" className="font-semibold text-zinc-900 underline underline-offset-4 dark:text-zinc-100">
+          <Link href="/auth/sign-in" className="font-semibold text-blue-700 underline underline-offset-4 dark:text-blue-300">
             Sign in here
           </Link>
           .

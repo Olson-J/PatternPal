@@ -1,4 +1,4 @@
-import { getPdfExportJob, getPdfExportDownloadBuffer } from "@/lib/pdf/queue";
+import { getPdfExportDownloadBufferByJobId, getPdfExportJobSnapshot } from "@/lib/pdf/trigger-queue";
 import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 
 type RouteContext = {
@@ -20,13 +20,13 @@ export async function GET(request: Request, context: RouteContext): Promise<Resp
   }
 
   const { id } = await context.params;
-  const job = getPdfExportJob(id);
+  const job = await getPdfExportJobSnapshot(id);
 
-  if (!job || job.userId !== userId || job.status !== "completed" || !job.storagePath) {
+  if (!job || job.userId !== userId || job.status !== "completed") {
     return Response.json({ error: "Export not ready." }, { status: 404 });
   }
 
-  const buffer = getPdfExportDownloadBuffer(job.storagePath);
+  const buffer = job.storagePath ? await getPdfExportDownloadBufferByJobId(job.id) : null;
 
   if (!buffer) {
     return Response.json({ error: "Stored PDF missing." }, { status: 404 });

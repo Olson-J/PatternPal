@@ -1,4 +1,4 @@
-import { getProjectById, listProjects, saveProject } from "./store";
+import { deleteProjectById, getProjectById, listProjects, saveProject } from "./store";
 import type { ProjectRecord, ProjectSummary, SaveProjectInput } from "./schema";
 
 type SupabaseProjectRow = {
@@ -210,6 +210,24 @@ async function saveProjectToSupabase(input: SaveProjectInput): Promise<ProjectRe
   };
 }
 
+async function deleteProjectFromSupabase(id: string, userId: string): Promise<boolean> {
+  // Remove child rows first in case FK constraints are not configured with ON DELETE CASCADE.
+  await supabaseRequest<unknown>(`instructions?project_id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: createSupabaseHeaders("return=minimal"),
+  });
+
+  const deletedRows = await supabaseRequest<SupabaseProjectRow[]>(
+    `projects?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,title,description,mode,created_at,updated_at`,
+    {
+      method: "DELETE",
+      headers: createSupabaseHeaders("return=representation"),
+    }
+  );
+
+  return deletedRows.length > 0;
+}
+
 export async function listProjectsForUser(userId: string): Promise<ProjectSummary[]> {
   if (!isSupabaseEnabled()) {
     return listProjects();
@@ -243,5 +261,17 @@ export async function saveProjectForUser(input: SaveProjectInput): Promise<Proje
     return saveProjectToSupabase(input);
   } catch {
     return saveProject(input);
+  }
+}
+
+export async function deleteProjectForUser(id: string, userId: string): Promise<boolean> {
+  if (!isSupabaseEnabled()) {
+    return deleteProjectById(id);
+  }
+
+  try {
+    return await deleteProjectFromSupabase(id, userId);
+  } catch {
+    return deleteProjectById(id);
   }
 }

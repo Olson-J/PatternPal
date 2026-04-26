@@ -10,6 +10,7 @@ export interface BackgroundGenerationRequest {
 
 export interface BackgroundGenerationJob {
   id: string;
+  triggerRunId?: string;
   description: string;
   mode: GuidanceMode;
   status: BackgroundJobStatus;

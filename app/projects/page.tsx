@@ -30,6 +30,7 @@ export default function ProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -63,6 +64,43 @@ export default function ProjectsPage() {
 
     void loadProjects();
   }, []);
+
+  async function handleDeleteProject(project: ProjectSummary): Promise<void> {
+    const confirmed = window.confirm(`Delete \"${project.title}\"? This action cannot be undone.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setError(null);
+    setDeletingProjectId(project.id);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/projects/${project.id}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Sign in to delete projects.");
+        }
+
+        if (response.status === 404) {
+          throw new Error("This project no longer exists.");
+        }
+
+        throw new Error(`Unable to delete project (status ${response.status}).`);
+      }
+
+      setProjects((current) => current.filter((item) => item.id !== project.id));
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete project.");
+    } finally {
+      setDeletingProjectId(null);
+    }
+  }
 
   const emptyMessage = isGuest
     ? "Guest mode is active. Sign in to see saved projects."
@@ -104,12 +142,22 @@ export default function ProjectsPage() {
               <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
                 Created {new Date(project.createdAt).toLocaleString()}
               </p>
-              <Link
-                href={`/projects/${project.id}`}
-                className="mt-4 inline-flex rounded-xl border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
-              >
-                View project details
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="inline-flex rounded-xl border border-zinc-300 px-3 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                >
+                  View project details
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteProject(project)}
+                  disabled={deletingProjectId === project.id}
+                  className="inline-flex rounded-xl border border-red-300 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
+                >
+                  {deletingProjectId === project.id ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </article>
           ))}
         </div>

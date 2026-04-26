@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fixtureProjects } from "../lib/projects/fixtures";
-import { resetPdfExports } from "../lib/pdf/queue";
+import { resetPdfExports } from "../lib/pdf/trigger-queue";
 import { resetPdfStorage } from "../lib/pdf/storage";
 
 vi.mock("../lib/pdf/generator", () => ({

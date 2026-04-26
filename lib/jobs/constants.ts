@@ -1,0 +1,1 @@
+export const BACKGROUND_GENERATION_TASK_ID = "background-generation";

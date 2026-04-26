@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState, useEffect, useRef, type ReactNode } from "react";
 import { clearGuestMode, isGuestModeEnabled } from "@/lib/auth/guest";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -99,7 +100,7 @@ function SectionCard({
 
 function Badge({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">
+    <span className="inline-flex items-center rounded-full border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-blue-700 dark:text-blue-200">
       {children}
     </span>
   );
@@ -110,7 +111,7 @@ function FeatureList({ items }: { items: string[] }) {
     <ul className="space-y-3 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
       {items.map((item) => (
         <li key={item} className="flex gap-3">
-          <span className="mt-2 h-2 w-2 rounded-full bg-amber-500" />
+          <span className="mt-2 h-2 w-2 rounded-full bg-blue-500" />
           <span>{item}</span>
         </li>
       ))}
@@ -161,6 +162,8 @@ export default function AppHome() {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [appMode, setAppMode] = useState<"mock" | "live">("mock");
   const [lastGenerationSource, setLastGenerationSource] = useState<"mock" | "api">("mock");
+  const [savedProjectId, setSavedProjectId] = useState<string | null>(null);
+  const [savedProjectFingerprint, setSavedProjectFingerprint] = useState<string | null>(null);
 
   useEffect(() => {
     const guestMode = isGuestModeEnabled();
@@ -187,7 +190,7 @@ export default function AppHome() {
       }
 
       if (!guestMode) {
-        window.location.replace("/");
+        window.location.replace("/auth/sign-in");
       }
     };
 
@@ -266,6 +269,8 @@ export default function AppHome() {
         if (data && data.instructions) {
           setInstructions(data.instructions);
           setLastGenerationSource("api");
+          setSavedProjectId(null);
+          setSavedProjectFingerprint(null);
           setError(null);
           scrollToResults();
         } else {
@@ -287,7 +292,61 @@ export default function AppHome() {
     setExportStatus(null);
     setInstructions(buildMockInstructions(example.value, example.mode));
     setLastGenerationSource("mock");
+    setSavedProjectId(null);
+    setSavedProjectFingerprint(null);
     scrollToResults();
+  }
+
+  function buildProjectSavePayload() {
+    return {
+      title: description.trim() || instructions.garment,
+      description: description.trim() || instructions.garment,
+      mode: instructions.mode,
+      instructions,
+    };
+  }
+
+  function getPayloadFingerprint(payload: ReturnType<typeof buildProjectSavePayload>): string {
+    return JSON.stringify(payload);
+  }
+
+  async function ensureProjectSaved(
+    authHeaders: Record<string, string>
+  ): Promise<{ projectId: string; reused: boolean }> {
+    const payload = buildProjectSavePayload();
+    const payloadFingerprint = getPayloadFingerprint(payload);
+
+    if (savedProjectId && savedProjectFingerprint === payloadFingerprint) {
+      return { projectId: savedProjectId, reused: true };
+    }
+
+    const response = await fetch("/api/projects", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const message = response.status === 400
+        ? "Could not save project due to invalid data."
+        : `Failed to save project (status ${response.status}).`;
+      throw new Error(message);
+    }
+
+    const saved = (await response.json()) as { project?: { id?: string } };
+    const projectId = saved.project?.id;
+
+    if (!projectId) {
+      throw new Error("Missing project id after save.");
+    }
+
+    setSavedProjectId(projectId);
+    setSavedProjectFingerprint(payloadFingerprint);
+
+    return { projectId, reused: false };
   }
 
   async function getAuthHeaders(): Promise<Record<string, string>> {
@@ -357,33 +416,11 @@ export default function AppHome() {
     setIsSaving(true);
     setSaveStatus(null);
 
-    const payload = {
-      title: instructions.garment,
-      description: description.trim() || instructions.garment,
-      mode: instructions.mode,
-      instructions,
-    };
-
     void (async () => {
       try {
         const authHeaders = await getAuthHeaders();
-        const response = await fetch("/api/projects", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...authHeaders,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const message = response.status === 400
-            ? "Could not save project due to invalid data."
-            : `Failed to save project (status ${response.status}).`;
-          throw new Error(message);
-        }
-
-        setSaveStatus("Saved to project history.");
+        const saveResult = await ensureProjectSaved(authHeaders);
+        setSaveStatus(saveResult.reused ? "Already saved to project history." : "Saved to project history.");
       } catch (saveError: unknown) {
         const message = saveError instanceof Error ? saveError.message : "Failed to save project.";
         setSaveStatus(message);
@@ -404,37 +441,14 @@ export default function AppHome() {
     }
 
     setIsExporting(true);
-    setExportStatus("Saving project for PDF export...");
+    setExportStatus("Preparing project for PDF export...");
 
     try {
       const authHeaders = await getAuthHeaders();
 
-      const savePayload = {
-        title: instructions.garment,
-        description: description.trim() || instructions.garment,
-        mode: instructions.mode,
-        instructions,
-      };
-
-      const saveResponse = await fetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...authHeaders,
-        },
-        body: JSON.stringify(savePayload),
-      });
-
-      if (!saveResponse.ok) {
-        throw new Error("Could not save the result before export.");
-      }
-
-      const saved = (await saveResponse.json()) as { project?: { id?: string } };
-      const projectId = saved.project?.id;
-
-      if (!projectId) {
-        throw new Error("Missing project id for PDF export.");
-      }
+      const saveResult = await ensureProjectSaved(authHeaders);
+      const projectId = saveResult.projectId;
+      setExportStatus(saveResult.reused ? "Using saved project for PDF export..." : "Saving project for PDF export...");
 
       setExportStatus("Starting PDF export...");
 
@@ -489,15 +503,21 @@ export default function AppHome() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_28%),linear-gradient(180deg,_#fffdf7_0%,_#f8fafc_48%,_#eef2ff_100%)] text-zinc-950 dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(24,24,27,0.32),_transparent_28%),linear-gradient(180deg,_#09090b_0%,_#111827_100%)] dark:text-zinc-50">
+    <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_28%),linear-gradient(180deg,_#f8fbff_0%,_#eff6ff_48%,_#e0ecff_100%)] text-zinc-950 dark:bg-[radial-gradient(circle_at_top_left,_rgba(96,165,250,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(24,24,27,0.32),_transparent_28%),linear-gradient(180deg,_#09090b_0%,_#111827_100%)] dark:text-zinc-50">
       <div className="absolute inset-x-0 top-0 h-72 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0))] dark:bg-[linear-gradient(180deg,rgba(9,9,11,0.92),rgba(9,9,11,0))]" />
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 sm:px-10 lg:px-12">
         <section className="grid gap-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur md:grid-cols-[1.1fr_0.9fr] md:p-8 dark:border-white/10 dark:bg-zinc-950/60">
           <div className="space-y-6">
             {isGuestMode ? (
-              <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-950 dark:text-amber-100">
-                Guest mode is active. You can generate instructions, but you cannot save projects or export PDFs.
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-blue-400/30 bg-blue-400/10 p-4 text-sm text-blue-950 dark:text-blue-100">
+                <p>Guest mode is active. You can generate instructions, but you cannot save projects or export PDFs.</p>
+                <Link
+                  href="/auth/sign-in"
+                  className="inline-flex items-center rounded-xl border border-blue-300 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-900 transition hover:bg-blue-100 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-100 dark:hover:bg-blue-500/20"
+                >
+                  Log in
+                </Link>
               </div>
             ) : null}
 
@@ -522,7 +542,7 @@ export default function AppHome() {
                   key={example.label}
                   type="button"
                   onClick={() => applyExample(example)}
-                  className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm font-medium text-zinc-800 transition hover:border-amber-300 hover:bg-amber-50 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100 dark:hover:border-amber-500/40 dark:hover:bg-zinc-900"
+                  className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm font-medium text-zinc-800 transition hover:border-blue-300 hover:bg-blue-50 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100 dark:hover:border-blue-500/40 dark:hover:bg-zinc-900"
                 >
                   <span className="block text-xs uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">Example</span>
                   <span className="mt-1 block">{example.label}</span>
@@ -544,7 +564,7 @@ export default function AppHome() {
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   rows={5}
-                  className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-500/10 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-amber-500"
+                  className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-950 outline-none transition placeholder:text-zinc-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/15 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-400"
                   placeholder="Describe the garment you want to make..."
                 />
               </label>
@@ -560,7 +580,7 @@ export default function AppHome() {
                       key={option.value}
                       className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 transition ${
                         mode === option.value
-                          ? "border-amber-400 bg-amber-50 dark:border-amber-500/50 dark:bg-amber-500/10"
+                          ? "border-blue-500 bg-blue-50 dark:border-blue-500/50 dark:bg-blue-500/10"
                           : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
                       }`}
                     >
@@ -571,7 +591,7 @@ export default function AppHome() {
                         value={option.value}
                         checked={mode === option.value}
                         onChange={() => setMode(option.value)}
-                        className="h-4 w-4 accent-amber-500"
+                        className="h-4 w-4 accent-blue-500"
                       />
                     </label>
                   ))}
@@ -587,7 +607,7 @@ export default function AppHome() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
               >
                 {isLoading ? "Generating guidance..." : "Generate"}
               </button>
@@ -651,7 +671,7 @@ export default function AppHome() {
                 </div>
 
                 {lastGenerationSource === "mock" ? (
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-950 dark:text-amber-50">
+                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-sm text-blue-950 dark:text-blue-50">
                     This result is mock-generated using local fixture data.
                   </div>
                 ) : null}
@@ -661,7 +681,7 @@ export default function AppHome() {
                     type="button"
                     onClick={handleSaveProject}
                     disabled={isSaving || isLoading || isExporting || isGuestMode}
-                    className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                    className="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
                   >
                     {isSaving ? "Saving result..." : "Save results to project history"}
                   </button>
@@ -669,7 +689,7 @@ export default function AppHome() {
                     type="button"
                     onClick={() => void handleExportPdf()}
                     disabled={isSaving || isLoading || isExporting || isGuestMode}
-                    className="inline-flex w-full items-center justify-center rounded-2xl bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                    className="inline-flex w-full items-center justify-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-500 dark:hover:bg-blue-400"
                   >
                     {isExporting ? "Exporting PDF..." : "Export PDF"}
                   </button>

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "../app/api/generation-jobs/route";
-import { resetBackgroundJobs } from "../lib/jobs/queue";
+import { resetBackgroundJobs } from "../lib/jobs/trigger-queue";
 
 describe("/api/generation-jobs route", () => {
   beforeEach(() => {

@@ -22,7 +22,7 @@ type MockJob = {
 
 const jobStore = new Map<string, MockJob>();
 
-vi.mock("@/lib/jobs/queue", () => {
+vi.mock("@/lib/jobs/trigger-queue", () => {
   return {
     enqueueBackgroundJob: vi.fn((request: {
       description: string;

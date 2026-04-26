@@ -1,4 +1,4 @@
-import { getPdfExportJob } from "@/lib/pdf/queue";
+import { getPdfExportJobSnapshot } from "@/lib/pdf/trigger-queue";
 import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 
 type RouteContext = {
@@ -20,7 +20,7 @@ export async function GET(request: Request, context: RouteContext): Promise<Resp
   }
 
   const { id } = await context.params;
-  const job = getPdfExportJob(id);
+  const job = await getPdfExportJobSnapshot(id);
 
   if (!job || job.userId !== userId) {
     return Response.json({ error: "Export job not found." }, { status: 404 });

@@ -1,4 +1,4 @@
-import { getBackgroundJob } from "@/lib/jobs/queue";
+import { getBackgroundJobSnapshot } from "@/lib/jobs/trigger-queue";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -6,7 +6,7 @@ type RouteContext = {
 
 export async function GET(_request: Request, context: RouteContext): Promise<Response> {
   const { id } = await context.params;
-  const job = getBackgroundJob(id);
+  const job = await getBackgroundJobSnapshot(id);
 
   if (!job) {
     return Response.json({ error: "Job not found." }, { status: 404 });

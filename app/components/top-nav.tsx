@@ -35,11 +35,12 @@ export function TopNav() {
   const pathname = usePathname();
   const [user, setUser] = useState<NavUser | null>(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const hideOnAuthPages = pathname.startsWith("/auth/");
 
-  // Hide nav on auth pages
-  if (pathname.startsWith("/auth/")) {
-    return null;
-  }
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const syncAuth = async () => {
@@ -72,21 +73,25 @@ export function TopNav() {
     }
 
     clearGuestMode();
-    window.location.replace("/");
+    window.location.replace("/auth/sign-in");
   }
 
   const displayName =
     user?.user_metadata?.display_name ||
     (user?.email ? user.email.split("@")[0] : "User");
 
+  if (hideOnAuthPages) {
+    return null;
+  }
+
   return (
     <nav className="fixed left-4 right-4 top-4 z-[70]">
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/90 p-2 shadow-[0_12px_40px_rgba(15,23,42,0.14)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
         <div className="flex flex-wrap items-center gap-2">
           {navItems.map((item) => {
-            const active = isActivePath(pathname, item.href);
+            const active = isMounted && isActivePath(pathname, item.href);
             const commonClassName =
-              "rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-amber-500/30";
+              "rounded-full px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500/30";
 
             return (
               <Link
@@ -95,7 +100,7 @@ export function TopNav() {
                 aria-current={active ? "page" : undefined}
                 className={`${commonClassName} ${
                   active
-                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
+                    ? "bg-blue-600 text-white dark:bg-blue-500 dark:text-white"
                     : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
                 }`}
               >
@@ -108,10 +113,10 @@ export function TopNav() {
         <div className="flex items-center gap-2 rounded-xl border border-zinc-200/80 bg-white/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/70">
           {isGuest ? (
             <>
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Welcome, guest</p>
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">Welcome, guest</p>
               <Link
-                href="/"
-                className="rounded-lg border border-amber-300 px-2.5 py-1 text-xs font-medium text-amber-900 transition hover:bg-amber-100 dark:border-amber-500/50 dark:text-amber-100 dark:hover:bg-amber-500/20"
+                  href="/auth/sign-in"
+                  className="rounded-lg border border-blue-300 px-2.5 py-1 text-xs font-medium text-blue-900 transition hover:bg-blue-100 dark:border-blue-500/50 dark:text-blue-100 dark:hover:bg-blue-500/20"
               >
                 Sign in
               </Link>
@@ -134,7 +139,7 @@ export function TopNav() {
             </>
           ) : (
             <Link
-              href="/"
+              href="/auth/sign-in"
               className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
               Sign in

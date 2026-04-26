@@ -207,7 +207,72 @@ describe("Milestone 1 UX paths", () => {
 
   it("saves generated results from the results section", async () => {
     const user = userEvent.setup();
+    let capturedSaveBody: { title?: string; description?: string } | null = null;
+
+    const saveTitleFetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/config")) {
+        return createJsonResponse(200, { mode: "live" });
+      }
+
+      if (url.includes("/api/generate")) {
+        const payload = init?.body ? (JSON.parse(String(init.body)) as { mode?: string }) : {};
+        const selected = payload.mode === "professional" ? mockProfessionalStays : mockCasualStays;
+        return createJsonResponse(200, {
+          instructions: {
+            ...selected,
+            mode: payload.mode === "professional" ? "professional" : "casual",
+            generatedAt: new Date().toISOString(),
+          },
+          meta: { fromCache: false, didFallback: false, issues: [] },
+        });
+      }
+
+      if (url.includes("/api/projects") && (init?.method ?? "GET") === "POST") {
+        capturedSaveBody = init?.body ? JSON.parse(String(init.body)) : null;
+        return createJsonResponse(201, { project: { id: "proj-test-1" } });
+      }
+
+      if (url.includes("/api/project-exports") && (init?.method ?? "GET") === "POST") {
+        return createJsonResponse(202, {
+          job: {
+            id: "pdf-job-1",
+            status: "queued",
+            progress: 0,
+            stage: "Queued",
+          },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1/download")) {
+        return new Response("pdf-bytes", {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1")) {
+        return createJsonResponse(200, {
+          job: {
+            id: "pdf-job-1",
+            status: "completed",
+            progress: 100,
+            stage: "Completed",
+            fileName: "patternpal-export.pdf",
+          },
+        });
+      }
+
+      throw new Error(`Unmocked URL: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", saveTitleFetchMock);
     render(<Home />);
+
+    const descriptionInput = screen.getByLabelText("Garment description");
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, "Short project title");
 
     await user.click(screen.getByRole("button", { name: "Generate" }));
 
@@ -220,6 +285,8 @@ describe("Milestone 1 UX paths", () => {
     await waitFor(() => {
       expect(screen.getByText("Saved to project history.")).toBeInTheDocument();
     });
+
+    expect(JSON.stringify(capturedSaveBody)).toContain('"title":"Short project title"');
   });
 
   it("exports generated results to PDF from the results section", async () => {
@@ -240,6 +307,94 @@ describe("Milestone 1 UX paths", () => {
       expect(screen.getByText("PDF export complete. Download started.")).toBeInTheDocument();
     });
 
+    expect(anchorClickSpy).toHaveBeenCalled();
+  });
+
+  it("does not save duplicate project when exporting an already saved result", async () => {
+    let projectSaveCalls = 0;
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+
+      if (url.includes("/api/config")) {
+        return createJsonResponse(200, { mode: "live" });
+      }
+
+      if (url.includes("/api/generate")) {
+        return createJsonResponse(200, {
+          instructions: {
+            ...mockCasualStays,
+            mode: "casual",
+            generatedAt: "2026-04-26T00:00:00.000Z",
+          },
+          meta: { fromCache: false, didFallback: false, issues: [] },
+        });
+      }
+
+      if (url.includes("/api/projects") && (init?.method ?? "GET") === "POST") {
+        projectSaveCalls += 1;
+        return createJsonResponse(201, { project: { id: "proj-test-1" } });
+      }
+
+      if (url.includes("/api/project-exports") && (init?.method ?? "GET") === "POST") {
+        return createJsonResponse(202, {
+          job: {
+            id: "pdf-job-1",
+            status: "queued",
+            progress: 0,
+            stage: "Queued",
+          },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1/download")) {
+        return new Response("pdf-bytes", {
+          status: 200,
+          headers: { "Content-Type": "application/pdf" },
+        });
+      }
+
+      if (url.includes("/api/project-exports/pdf-job-1")) {
+        return createJsonResponse(200, {
+          job: {
+            id: "pdf-job-1",
+            status: "completed",
+            progress: 100,
+            stage: "Completed",
+            fileName: "patternpal-export.pdf",
+          },
+        });
+      }
+
+      throw new Error(`Unmocked URL: ${url}`);
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(<Home />);
+
+    await user.click(screen.getByRole("button", { name: "Generate" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Save results to project history" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Save results to project history" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Saved to project history.")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Export PDF" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("PDF export complete. Download started.")).toBeInTheDocument();
+    });
+
+    expect(projectSaveCalls).toBe(1);
     expect(anchorClickSpy).toHaveBeenCalled();
   });
 });

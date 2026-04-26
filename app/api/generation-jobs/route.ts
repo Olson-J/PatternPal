@@ -1,5 +1,5 @@
-import { enqueueBackgroundJob, listBackgroundJobs } from "@/lib/jobs/queue";
-import { isBackgroundGenerationRequest } from "@/lib/jobs/schema";
+import { enqueueBackgroundJob, listBackgroundJobs } from "../../../lib/jobs/trigger-queue";
+import { isBackgroundGenerationRequest } from "../../../lib/jobs/schema";
 
 function badRequest(message: string): Response {
   return Response.json({ error: message }, { status: 400 });

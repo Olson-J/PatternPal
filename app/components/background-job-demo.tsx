@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { GuidanceMode, GarmentInstructions } from "@/lib/instructions/schema";
-import { enqueueBackgroundJob, getBackgroundJob } from "@/lib/jobs/queue";
+import { enqueueBackgroundJob, getBackgroundJob } from "@/lib/jobs/trigger-queue";
 
 type BackgroundJobStatus = "queued" | "running" | "completed" | "failed";
 

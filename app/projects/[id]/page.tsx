@@ -7,13 +7,19 @@ import { isGuestModeEnabled } from "@/lib/auth/guest";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PdfExportPanel } from "@/app/components/pdf-export-panel";
 
+type ProjectAssemblyStep = {
+  step: number;
+  description: string;
+  details?: string[];
+};
+
 type ProjectDetail = {
   id: string;
   title: string;
   description: string;
   instructions: {
     materials: string[];
-    assembly: Array<{ step: number; description: string }>;
+    assembly: ProjectAssemblyStep[];
     finishing: string[];
   };
 };
@@ -135,9 +141,23 @@ export default function ProjectDetailPage() {
 
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-500">Assembly</h2>
-              <ol className="mt-3 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+              <ol className="mt-3 space-y-4 text-sm text-zinc-700 dark:text-zinc-300">
                 {project.instructions.assembly.map((step) => (
-                  <li key={`${step.step}-${step.description}`}>Step {step.step}: {step.description}</li>
+                  <li key={`${step.step}-${step.description}`} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/70">
+                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      Step {step.step}: {step.description}
+                    </p>
+                    {step.details && step.details.length > 0 ? (
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                        {step.details.map((detail) => (
+                          <li key={detail} className="flex gap-3">
+                            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                            <span>{detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </li>
                 ))}
               </ol>
             </div>

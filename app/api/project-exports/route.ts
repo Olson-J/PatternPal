@@ -1,4 +1,4 @@
-import { enqueuePdfExport } from "@/lib/pdf/queue";
+import { enqueuePdfExport } from "@/lib/pdf/trigger-queue";
 import type { PdfExportRequest } from "@/lib/pdf/schema";
 import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 

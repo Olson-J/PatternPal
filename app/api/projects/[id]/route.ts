@@ -1,4 +1,4 @@
-import { getProjectByIdForUser } from "@/lib/projects/repository";
+import { deleteProjectForUser, getProjectByIdForUser } from "@/lib/projects/repository";
 import { isSupabaseAuthEnabled, resolveProjectUserIdFromRequest } from "@/lib/projects/user";
 
 type RouteParams = {
@@ -27,4 +27,28 @@ export async function GET(request: Request, context: RouteParams): Promise<Respo
   }
 
   return Response.json({ project });
+}
+
+export async function DELETE(request: Request, context: RouteParams): Promise<Response> {
+  const { id } = await context.params;
+  const userId = await resolveProjectUserIdFromRequest(request);
+
+  if (!userId) {
+    return Response.json(
+      {
+        error: isSupabaseAuthEnabled()
+          ? "Authentication required. Include a valid Supabase access token."
+          : "Unable to resolve project user.",
+      },
+      { status: 401 }
+    );
+  }
+
+  const deleted = await deleteProjectForUser(id, userId);
+
+  if (!deleted) {
+    return Response.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  return new Response(null, { status: 204 });
 }
