@@ -30,7 +30,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col pt-20">
-        <TopNav />
         {children}
       </body>
     </html>

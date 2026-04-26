@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
-import { clearGuestMode } from "@/lib/auth/guest";
+import { clearGuestMode, enableGuestMode } from "@/lib/auth/guest";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function SignUpPage() {
@@ -122,11 +122,15 @@ export default function SignUpPage() {
     }
   }
 
+  function continueAsGuest(): void {
+      enableGuestMode();
+      window.location.assign("/");
+    }
+
   return (
     <main className="relative mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10 sm:px-10">
       <section className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
         <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Authentication</p>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Create your account</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             Sign up to save projects and keep your generated instructions under your own account.
@@ -199,6 +203,17 @@ export default function SignUpPage() {
             {isSubmitting ? "Creating account..." : "Create account"}
           </button>
         </form>
+
+        <button
+          type="button"
+          onClick={continueAsGuest}
+          className="mt-4 inline-flex rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+        >
+          Continue as guest
+        </button>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          Continue as guest is available, but you will not be able to save projects or export PDFs.
+        </p>
 
         <p className="mt-6 text-sm text-zinc-600 dark:text-zinc-300">
           Already have an account?{" "}

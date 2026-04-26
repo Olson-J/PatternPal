@@ -71,7 +71,13 @@ async function supabaseRequest<T>(path: string, init?: RequestInit): Promise<T> 
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  const raw = await response.text();
+
+  if (!raw.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(raw) as T;
 }
 
 function toProjectSummaryFromRow(row: SupabaseProjectRow): ProjectSummary {

@@ -68,7 +68,6 @@ export default function SignInPage() {
     <main className="relative mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-10 sm:px-10">
       <section className="rounded-[2rem] border border-zinc-200 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
         <header className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Authentication</p>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">Sign in to PatternPal</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             Log in to save projects and export PDFs tied to your account.
@@ -123,9 +122,7 @@ export default function SignInPage() {
           </button>
         </form>
 
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-          Continue as guest is available, but you will not be able to save projects or export PDFs.
-        </div>
+        
 
         <button
           type="button"
@@ -134,6 +131,9 @@ export default function SignInPage() {
         >
           Continue as guest
         </button>
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          Continue as guest is available, but you will not be able to save projects or export PDFs.
+        </p>
 
         <p className="mt-6 text-sm text-zinc-600 dark:text-zinc-300">
           Need an account?{" "}

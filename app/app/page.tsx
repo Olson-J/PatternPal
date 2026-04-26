@@ -3,7 +3,6 @@
 import { FormEvent, useState, useEffect, useRef, type ReactNode } from "react";
 import { clearGuestMode, isGuestModeEnabled } from "@/lib/auth/guest";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { UserProfile } from "../components/user-profile";
 import {
   createMockInstructions,
   mockCasualStays,
@@ -492,7 +491,6 @@ export default function AppHome() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_28%),linear-gradient(180deg,_#fffdf7_0%,_#f8fafc_48%,_#eef2ff_100%)] text-zinc-950 dark:bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(24,24,27,0.32),_transparent_28%),linear-gradient(180deg,_#09090b_0%,_#111827_100%)] dark:text-zinc-50">
       <div className="absolute inset-x-0 top-0 h-72 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0))] dark:bg-[linear-gradient(180deg,rgba(9,9,11,0.92),rgba(9,9,11,0))]" />
-      <UserProfile />
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 sm:px-10 lg:px-12">
         <section className="grid gap-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_30px_80px_rgba(15,23,42,0.08)] backdrop-blur md:grid-cols-[1.1fr_0.9fr] md:p-8 dark:border-white/10 dark:bg-zinc-950/60">
