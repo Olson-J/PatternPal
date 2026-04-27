@@ -66,10 +66,7 @@ describe("PdfExportPanel", () => {
     });
 
     expect(screen.getByText("COMPLETED · Completed")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /download pdf/i })).toHaveAttribute(
-      "href",
-      "/api/project-exports/pdf-1/download"
-    );
+    expect(screen.getByRole("button", { name: /download pdf/i })).toBeInTheDocument();
   });
 
   it("shows retry path for failed exports", async () => {
@@ -77,12 +74,11 @@ describe("PdfExportPanel", () => {
     render(<PdfExportPanel projectId="proj-stays-casual" projectTitle="Weekend Stays Build" />);
 
     await act(async () => {
-      fireEvent.click(screen.getByRole("checkbox", { name: /simulate export failure/i }));
       fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
       await Promise.resolve();
     });
 
     expect(screen.getByText(/Export failed/i)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /download pdf/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /download pdf/i })).not.toBeInTheDocument();
   });
 });

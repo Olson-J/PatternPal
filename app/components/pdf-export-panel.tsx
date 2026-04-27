@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type PdfExportJob = {
   id: string;
@@ -33,14 +34,29 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [simulateFailure, setSimulateFailure] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const authHeadersRef = useRef<Record<string, string>>({});
 
   const isActive = useMemo(
     () => job?.status === "queued" || job?.status === "running",
     [job?.status]
   );
 
-  async function loadJob(jobId: string): Promise<PdfExportJob | null> {
-    const response = await fetch(`/api/project-exports/${jobId}`);
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    try {
+      const client = getSupabaseBrowserClient();
+      const { data } = await client.auth.getSession();
+      const token = data.session?.access_token;
+
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function loadJob(jobId: string, authHeaders: Record<string, string>): Promise<PdfExportJob | null> {
+    const response = await fetch(`/api/project-exports/${jobId}`, {
+      headers: authHeaders,
+    });
 
     if (!response.ok) {
       throw new Error("Unable to load PDF export status.");
@@ -50,14 +66,45 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
     return json.job;
   }
 
+  async function downloadCompletedExport(): Promise<void> {
+    if (!job?.id || job.status !== "completed") {
+      return;
+    }
+
+    const response = await fetch(`/api/project-exports/${job.id}/download`, {
+      headers: authHeadersRef.current,
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to download completed PDF export.");
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = objectUrl;
+    link.download = job.fileName ?? "patternpal-export.pdf";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+  }
+
   async function startExport() {
     setIsSubmitting(true);
     setError(null);
 
     try {
+      const authHeaders = await getAuthHeaders();
+      authHeadersRef.current = authHeaders;
+
       const response = await fetch("/api/project-exports", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify({
           projectId,
           simulateFailure,
@@ -84,10 +131,11 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
     }
 
     let cancelled = false;
+    const authHeaders = authHeadersRef.current;
 
     const poll = async () => {
       try {
-        const latest = await loadJob(job.id);
+        const latest = await loadJob(job.id, authHeaders);
 
         if (!cancelled && latest) {
           setJob(latest);
@@ -109,8 +157,6 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
       window.clearInterval(intervalId);
     };
   }, [isActive, job?.id]);
-
-  const downloadUrl = job?.status === "completed" ? `/api/project-exports/${job.id}/download` : null;
 
   return (
     <section className="rounded-[2rem] border border-zinc-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] dark:border-zinc-800 dark:bg-zinc-950/70">
@@ -165,13 +211,14 @@ export function PdfExportPanel({ projectId, projectTitle }: PdfExportPanelProps)
         </div>
       ) : null}
 
-      {downloadUrl ? (
-        <a
-          href={downloadUrl}
+      {job?.status === "completed" ? (
+        <button
+          type="button"
+          onClick={() => void downloadCompletedExport()}
           className="mt-6 inline-flex rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100 dark:hover:bg-emerald-500/20"
         >
           Download PDF
-        </a>
+        </button>
       ) : null}
     </section>
   );
