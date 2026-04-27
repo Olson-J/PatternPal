@@ -4,6 +4,7 @@ import { generateInstructions } from "../lib/instructions/generate";
 import { mockGenerateInstructionResponse } from "../lib/instructions/mockLlm";
 import { generateOpenAiInstructionResponse } from "../lib/instructions/openai";
 import { getDefaultInstructionGenerator } from "../lib/instructions/provider";
+import * as openAiModule from "../lib/instructions/openai";
 
 describe("Instruction provider selection", () => {
   afterEach(() => {
@@ -33,22 +34,18 @@ describe("Instruction provider selection", () => {
     vi.stubEnv("USE_REAL_LLM", "true");
     vi.stubEnv("OPENAI_API_KEY", "test-key");
 
-    const fetchMock = vi.fn(async () =>
-      new Response(
+    const openAiSpy = vi
+      .spyOn(openAiModule, "generateOpenAiInstructionResponse")
+      .mockResolvedValue(
         JSON.stringify({
-          output_text: JSON.stringify({
-            garment: "18th-century stays",
-            mode: "professional",
-            materials: ["Linen", "Whalebone"],
-            assembly: [{ step: 1, description: "Cut panels" }],
-            finishing: ["Bind edges"],
-          }),
-        }),
-        { status: 200 }
-      )
-    );
-
-    vi.stubGlobal("fetch", fetchMock);
+          garment: "18th-century stays",
+          mode: "professional",
+          materials: ["Linen", "Whalebone"],
+          assembly: [{ step: 1, description: "Cut panels", details: [] }],
+          finishing: ["Bind edges"],
+          notes: "Structured for test.",
+        })
+      );
 
     const result = await generateInstructions({
       description: "18th-century stays",
@@ -57,7 +54,7 @@ describe("Instruction provider selection", () => {
 
     expect(result.fromCache).toBe(false);
     expect(result.instructions.garment).toBe("18th-century stays");
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(openAiSpy).toHaveBeenCalledTimes(1);
   });
 
   it("throws a clear error when real LLM is enabled without key", async () => {
