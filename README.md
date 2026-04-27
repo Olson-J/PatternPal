@@ -112,3 +112,75 @@ Notes:
 - When browser Supabase auth is configured, the app defaults to the sign-in page for unauthenticated users.
 - The sign-in page includes a `Continue as guest` option.
 - Guest mode allows generating instructions only; saving projects and PDF export are disabled until sign-in.
+
+## Background Worker Modes (Trigger.dev vs Local Fallback)
+
+PatternPal supports two background worker modes:
+
+1. Local fallback worker mode (default for local development)
+2. Trigger.dev worker mode (optional, external worker)
+
+When Trigger.dev is not configured, background generation and PDF export jobs still run using an in-process fallback queue.
+
+To enable Trigger.dev worker mode, set these environment variables:
+
+```bash
+TRIGGER_SECRET_KEY=your-trigger-secret
+TRIGGER_API_URL=https://api.trigger.dev
+TRIGGER_PROJECT_REF=your-project-ref
+USE_TRIGGER_WORKER=true
+```
+
+Notes:
+
+- If `USE_TRIGGER_WORKER` is false (or Trigger vars are missing), the app uses local fallback worker mode.
+- This fallback mode is suitable for local development and demos.
+- Trigger.dev mode is recommended when demonstrating external async job processing.
+
+## Environment Setup
+
+Use [`.env.example`](.env.example) as the template for local configuration.
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill in real values for your environment.
+
+Do not commit `.env.local`.
+
+## Submission Packaging (Clean Zip)
+
+To create a clean submission folder that excludes `node_modules` and `.env.local`, create a fresh clone and zip that clone.
+
+### Option A: Fresh clone from local repo path
+
+From a directory outside your project:
+
+```bash
+git clone --depth 1 /home/julie/spring2026/4610/patternpal patternpal-submit
+cd patternpal-submit
+```
+
+Then create the zip:
+
+```bash
+zip -r patternpal-submit.zip patternpal-submit
+```
+
+### Option B: Git archive (single command export)
+
+From your project root:
+
+```bash
+git archive --format=zip --output=patternpal-submit.zip HEAD
+```
+
+`git archive` exports only tracked files from Git, so it naturally excludes ignored files like `.env.local` and `node_modules`.
+
+Before zipping, run a final verification:
+
+```bash
+npm run build
+npm run test -- --run
+```
